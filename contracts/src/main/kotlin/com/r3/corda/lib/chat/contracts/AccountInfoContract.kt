@@ -12,6 +12,10 @@ import javax.transaction.NotSupportedException
 class AccountInfoContract : Contract {
     override fun verify(tx: LedgerTransaction) {
         val command = tx.commands.requireSingleCommand(ChatCommand::class.java)
+
+        // common check
+
+        // per command check
         if (command.value is Create) {
             require(tx.inputStates.size == 0) { "There should be no input chat state." }
             require(tx.outputStates.size == 1) { "There should only be one output chat state." }
