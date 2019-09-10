@@ -8,7 +8,10 @@ import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
+import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.utilities.unwrap
 import java.util.*
 
 /**
@@ -45,11 +48,18 @@ class CreateChatFlow(
                     it.verify(serviceHub)
                 }
 
-        // finalize it and save to vaults
-        val counterpartySessions = to.map { initiateFlow(it) }.toSet()
+        // send to "to" list.
+        // why we chat with "send" instead of other way is becasue "send" is non-blockable,
+        // meaning, any time, sender send message and save to vault, it'd leave no matter whether receiver get it or not.
+        to.map { initiateFlow(it).send(newChatInfo) }
+
+        // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
-        val finalityFlow = subFlow(FinalityFlow(signedTxn, counterpartySessions))
-        return finalityFlow.coreTransaction.outRefsOfType<ChatInfo>().single()
+        serviceHub.recordTransactions(signedTxn)
+
+        return serviceHub.vaultService.queryBy<ChatInfo>(
+                QueryCriteria.LinearStateQueryCriteria(linearId = listOf(newChatInfo.linearId))
+        ).states.single()
     }
 }
 
@@ -60,6 +70,19 @@ class CreateChatFlow(
 class CreateChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        subFlow(ReceiveFinalityFlow(flowSession))
+
+        // "receive" a message, then save to vault.
+        // even when the node is off for a long time, still the chat will not be blocked by me
+        val chatInfo = flowSession.receive<ChatInfo>().unwrap{it}
+        val notary = serviceHub.networkMapCache.notaryIdentities.first()
+        val txnBuilder = TransactionBuilder(notary = notary)
+                .addOutputState(chatInfo)
+                .addCommand(Create(), listOf(serviceHub.myInfo.legalIdentities.single().owningKey))
+                .also {
+                    it.verify(serviceHub)
+                }
+
+        val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
+        serviceHub.recordTransactions(signedTxn)
     }
 }

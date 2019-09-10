@@ -31,10 +31,8 @@ data class PersistentChatInfo(
         val attachment: String? = null,
         @Column(name = "chatFrom", unique = false, nullable = false)
         val chatFrom: Party,
-
         @ElementCollection
         @Column(name = "chatToList", unique = false, nullable = false)
         @CollectionTable(name = "chat_tos", joinColumns = [(JoinColumn(name = "output_index", referencedColumnName = "output_index")), (JoinColumn(name = "transaction_id", referencedColumnName = "transaction_id"))])
         val chatToList: List<Party>
-
 ) : PersistentState()

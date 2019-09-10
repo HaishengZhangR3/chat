@@ -43,7 +43,7 @@ class CreateChatFlowTests {
 
     //host node will create an account
     @Test
-    fun `should be possible to create an account`() {
+    fun `should be possible to create a chat`() {
 
         //host node A will create an account
         val chatFlow = nodeA.startFlow(CreateChatFlow(
@@ -56,10 +56,15 @@ class CreateChatFlowTests {
         network.runNetwork()
         val chatInfo = chatFlow.getOrThrow()
 
+        val chatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
 
-        val chatInfoInVault = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
+        //check whether the created one in node A is same as that in the DB of host node A
+        Assert.assertTrue(chatInfo == chatInfoInVaultA)
 
-        //check whether the created one in node A is same as that in the DB of host node `A
-        Assert.assertTrue(chatInfo == chatInfoInVault)
+        //check whether the created one in node B is same as that in the DB of host node A
+        val chatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
+
+        Assert.assertTrue(chatInfoInVaultA.state == chatInfoInVaultB.state)
+
     }
 }

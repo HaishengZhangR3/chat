@@ -47,4 +47,9 @@ data class ChatInfo(
     override fun supportedSchemas(): Iterable<MappedSchema> {
         return listOf(ChatSchema)
     }
+
+    override fun toString(): String {
+        return "ChatInfo(subject='$subject', content='$content', attachment=$attachment, from=$from, to=$to, linearId=$linearId)"
+    }
+
 }
