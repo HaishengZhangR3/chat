@@ -41,11 +41,9 @@ class CreateChatFlowTests {
         network.stopNodes()
     }
 
-    //host node will create an account
     @Test
-    fun `should be possible to create a chat`() {
+    fun `should be possible to reply a chat`() {
 
-        //host node A will create an account
         val chatFlow = nodeA.startFlow(CreateChatFlow(
                 "subject",
                 "content",

@@ -4,6 +4,7 @@ import com.r3.corda.lib.chat.contracts.commands.Reply
 import com.r3.corda.lib.chat.contracts.commands.ChatCommand
 import com.r3.corda.lib.chat.contracts.commands.Close
 import com.r3.corda.lib.chat.contracts.commands.Create
+import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.requireSingleCommand
 import net.corda.core.transactions.LedgerTransaction
@@ -33,6 +34,9 @@ class ChatInfoContract : Contract {
             require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
 
             // in.linearId must == out.linearId
+            val input = tx.inputStates.single() as ChatInfo
+            val output = tx.outputStates.single() as ChatInfo
+            require(input.linearId == output.linearId) { "Both input and output should have the same ID so that they are in one chat thread."}
 
         } else if (command.value is Close) {
             require(tx.inputStates.size == 1) { "There should only be one input chat state." }

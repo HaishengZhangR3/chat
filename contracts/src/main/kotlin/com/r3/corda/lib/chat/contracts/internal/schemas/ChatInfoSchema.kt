@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.contracts.internal.schemas
 import net.corda.core.identity.Party
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
+import java.time.Instant
 import java.util.*
 import javax.persistence.*
 
@@ -20,6 +21,9 @@ object ChatSchema : MappedSchema(
 ])
 data class PersistentChatInfo(
 
+        // created time
+        @Column(name = "created", unique = true, nullable = false)
+        val created: Instant = Instant.now(),
         // identifier is the linearId to indicate a chat thread
         @Column(name = "identifier", unique = true, nullable = false)
         val identifier: UUID,
