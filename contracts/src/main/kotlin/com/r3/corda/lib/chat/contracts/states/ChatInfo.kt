@@ -17,6 +17,7 @@ import java.time.Instant
 /**
  * A state which records the chat subject, contents as well as the participants.
  * @TODO add a status indicating if the chat is closed or still opening
+ * @TODO create a type: chat thread id, instead of using linearId: UniqueIdentifier
  */
 @BelongsToContract(ChatInfoContract::class)
 data class ChatInfo(
@@ -31,9 +32,10 @@ data class ChatInfo(
 
     override val participants: List<AbstractParty> get() = to + from
 
-    override fun generateMappedObject(schema: MappedSchema): PersistentState {
-        if (schema is ChatSchema) {
-            return PersistentChatInfo(
+    override fun generateMappedObject(schema: MappedSchema): PersistentState =
+        when (schema){
+            is ChatSchema ->
+                PersistentChatInfo(
                     created = created,
                     identifier = linearId.id,
                     subject = subject,
@@ -41,18 +43,13 @@ data class ChatInfo(
                     attachment = attachment?.toString(),
                     chatFrom = from,
                     chatToList = to
-            )
-        } else {
-            throw IllegalStateException("Cannot construct instance of ${this.javaClass} from Schema: $schema")
+                )
+            else ->
+                throw IllegalStateException("Cannot construct instance of ${this.javaClass} from Schema: $schema")
         }
-    }
 
-    override fun supportedSchemas(): Iterable<MappedSchema> {
-        return listOf(ChatSchema)
-    }
+    override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatSchema)
 
-    override fun toString(): String {
-        return "ChatInfo(subject='$subject', content='$content', attachment=$attachment, from=$from, to=$to, linearId=$linearId)"
-    }
-
+    override fun toString(): String =
+            "ChatInfo(subject='$subject', content='$content', attachment=$attachment, from=$from, to=$to, linearId=$linearId)"
 }

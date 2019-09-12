@@ -19,35 +19,37 @@ class ChatInfoContract : Contract {
 
 
         // per command check
-        if (command.value is Create) {
-            require(tx.inputStates.size == 0) { "There should be no input chat state." }
-            require(tx.outputStates.size == 1) { "There should only be one output chat state." }
-            val requiredSigners = command.signers
-            require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
+        when (command.value) {
+            is Create -> {
+                require(tx.inputStates.size == 0) { "There should be no input chat state." }
+                require(tx.outputStates.size == 1) { "There should only be one output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
 
-            // out.linearId must != null
+                // out.linearId must != null
 
-        } else if (command.value is Reply) {
-            require(tx.inputStates.size == 1) { "There should only be one input chat state." }
-            require(tx.outputStates.size == 1) { "There should only be one output chat state." }
-            val requiredSigners = command.signers
-            require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
+            }
+            is Reply -> {
+                require(tx.inputStates.size == 1) { "There should only be one input chat state." }
+                require(tx.outputStates.size == 1) { "There should only be one output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
 
-            // in.linearId must == out.linearId
-            val input = tx.inputStates.single() as ChatInfo
-            val output = tx.outputStates.single() as ChatInfo
-            require(input.linearId == output.linearId) { "Both input and output should have the same ID so that they are in one chat thread."}
+                // in.linearId must == out.linearId
+                val input = tx.inputStates.single() as ChatInfo
+                val output = tx.outputStates.single() as ChatInfo
+                require(input.linearId == output.linearId) { "Both input and output should have the same ID so that they are in one chat thread." }
+            }
+            is Close -> {
+                require(tx.inputStates.size == 1) { "There should only be one input chat state." }
+                require(tx.outputStates.size == 0) { "There should be no output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
 
-        } else if (command.value is Close) {
-            require(tx.inputStates.size == 1) { "There should only be one input chat state." }
-            require(tx.outputStates.size == 0) { "There should be no output chat state." }
-            val requiredSigners = command.signers
-            require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
-
-            // in.linearId must != null
-
-        } else {
-            throw NotSupportedException()
+                // in.linearId must != null
+            }
+            else ->
+                throw NotSupportedException()
         }
     }
 }

@@ -14,13 +14,16 @@ object ChatSchema : MappedSchema(
 )
 
 @Entity
-@Table(name = "chat", uniqueConstraints = [
-    UniqueConstraint(name = "id_constraint", columnNames = ["identifier", "created"])
-], indexes = [
-    Index(name = "chatId_idx", columnList = "identifier")
-])
+@Table(
+        name = "chat",
+        uniqueConstraints = [
+            UniqueConstraint(name = "id_constraint", columnNames = ["identifier", "created"])
+        ],
+        indexes = [
+            Index(name = "chatId_idx", columnList = "identifier")
+        ]
+)
 data class PersistentChatInfo(
-
         // created time
         @Column(name = "created", unique = true, nullable = false)
         val created: Instant,
@@ -39,4 +42,5 @@ data class PersistentChatInfo(
         @Column(name = "chatToList", unique = false, nullable = false)
         @CollectionTable(name = "chat_tos", joinColumns = [(JoinColumn(name = "output_index", referencedColumnName = "output_index")), (JoinColumn(name = "transaction_id", referencedColumnName = "transaction_id"))])
         val chatToList: List<Party>
+
 ) : PersistentState()
