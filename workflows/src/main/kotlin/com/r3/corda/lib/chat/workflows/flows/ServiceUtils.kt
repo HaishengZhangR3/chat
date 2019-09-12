@@ -13,8 +13,8 @@ import net.corda.core.node.services.vault.SortAttribute
 
 object ServiceUtils {
 
-    // get the head of the chat thread from storage based on the linearId
-    fun getChatHead(serviceHub: ServiceHub, linearId: UniqueIdentifier): StateAndRef<ChatInfo> {
+    // @todo: should any reply & finalize chat consume **all** of the on-ledge states or just the head one?
+    fun getChats(serviceHub: ServiceHub, linearId: UniqueIdentifier): List<StateAndRef<ChatInfo>> {
         val sorting = Sort(setOf(Sort.SortColumn(
                 SortAttribute.Custom(PersistentChatInfo::class.java, "created"),
                 Sort.Direction.DESC
@@ -25,8 +25,12 @@ object ServiceUtils {
                 sorting = sorting)
 
         return when {
-            stateAndRefs.states.size == 1 -> stateAndRefs.states[0]
+            stateAndRefs.states.size > 0 -> stateAndRefs.states
             else -> throw FlowException("No such chat of linearId == $linearId found in vault.")
         }
     }
+
+    // get the head of the chat thread from storage based on the linearId
+    fun getChatHead(serviceHub: ServiceHub, linearId: UniqueIdentifier): StateAndRef<ChatInfo> =
+        getChats(serviceHub, linearId).first()
 }
