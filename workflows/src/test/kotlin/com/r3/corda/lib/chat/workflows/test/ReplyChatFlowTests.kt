@@ -69,8 +69,8 @@ class ReplyChatFlowTests {
                         "subject",
                         "content",
                         null,
-                        nodeA.info.legalIdentities.single(),
-                        listOf(nodeB.info.legalIdentities.single()),
+                        nodeB.info.legalIdentities.single(),
+                        listOf(nodeA.info.legalIdentities.single()),
                         newChatInfoInVaultB.state.data.linearId
                 )
         )
@@ -81,11 +81,16 @@ class ReplyChatFlowTests {
         // the reply chat id === thread id
         Assert.assertTrue(replyChatInfo.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
 
-        // there are two chats in total in both nodes
+        // there are one chat on ledge in each node
         val replyChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
         val replyChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
-        Assert.assertTrue(replyChatsInVaultA.size == 2)
-        Assert.assertTrue(replyChatsInVaultB.size == 2)
+        Assert.assertTrue(replyChatsInVaultA.size == 1)
+        Assert.assertTrue(replyChatsInVaultB.size == 1)
+
+        // replied chat should be newer than created chat
+        val newChatDate = newChatInfo.state.data.created
+        val replyChatDate = replyChatInfo.state.data.created
+        Assert.assertTrue(newChatDate < replyChatDate)
 
         // all of them have same id
         Assert.assertTrue((replyChatsInVaultA + replyChatsInVaultB).map { it.state.data.linearId }.toSet().size == 1)

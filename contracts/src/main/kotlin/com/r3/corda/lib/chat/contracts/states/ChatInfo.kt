@@ -12,6 +12,7 @@ import net.corda.core.identity.Party
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
 import net.corda.core.schemas.QueryableState
+import java.time.Instant
 
 /**
  * A state which records the chat subject, contents as well as the participants.
@@ -19,6 +20,7 @@ import net.corda.core.schemas.QueryableState
  */
 @BelongsToContract(ChatInfoContract::class)
 data class ChatInfo(
+        val created: Instant = Instant.now(),
         val subject: String,
         val content: String,
         val attachment: SecureHash?,
@@ -32,6 +34,7 @@ data class ChatInfo(
     override fun generateMappedObject(schema: MappedSchema): PersistentState {
         if (schema is ChatSchema) {
             return PersistentChatInfo(
+                    created = created,
                     identifier = linearId.id,
                     subject = subject,
                     content = content,

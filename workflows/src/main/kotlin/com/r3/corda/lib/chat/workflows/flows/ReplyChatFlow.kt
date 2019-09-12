@@ -70,12 +70,15 @@ class ReplyChatFlow(
 class ReplyChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
+        val notary = serviceHub.networkMapCache.notaryIdentities.first()
 
         // "receive" a message, then save to vault.
         // even when the node is off for a long time, still the chat will not be blocked by me
         val chatInfo = flowSession.receive<ChatInfo>().unwrap{ it }
-        val notary = serviceHub.networkMapCache.notaryIdentities.first()
+        val input = ServiceUtils.getChatHead(serviceHub, chatInfo.linearId)
+
         val txnBuilder = TransactionBuilder(notary = notary)
+                .addInputState(input)
                 .addOutputState(chatInfo)
                 .addCommand(Reply(), listOf(serviceHub.myInfo.legalIdentities.single().owningKey))
                 .also {

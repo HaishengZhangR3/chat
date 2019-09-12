@@ -15,7 +15,7 @@ object ChatSchema : MappedSchema(
 
 @Entity
 @Table(name = "chat", uniqueConstraints = [
-    UniqueConstraint(name = "id_constraint", columnNames = ["identifier"])
+    UniqueConstraint(name = "id_constraint", columnNames = ["identifier", "created"])
 ], indexes = [
     Index(name = "chatId_idx", columnList = "identifier")
 ])
@@ -23,9 +23,9 @@ data class PersistentChatInfo(
 
         // created time
         @Column(name = "created", unique = true, nullable = false)
-        val created: Instant = Instant.now(),
+        val created: Instant,
         // identifier is the linearId to indicate a chat thread
-        @Column(name = "identifier", unique = true, nullable = false)
+        @Column(name = "identifier", unique = false, nullable = false)
         val identifier: UUID,
         @Column(name = "subject", unique = false, nullable = false)
         val subject: String,
