@@ -42,6 +42,7 @@ class CreateChatFlow(
         )
 
         val txnBuilder = TransactionBuilder(notary = notary)
+                // no input
                 .addOutputState(newChatInfo)
                 .addCommand(Create(), from.owningKey)
                 .also {
@@ -49,7 +50,7 @@ class CreateChatFlow(
                 }
 
         // send to "to" list.
-        // why we chat with "send" instead of other way is becasue "send" is non-blockable,
+        // why we chat with "send" instead of other way is because "send" is non-blockable,
         // meaning, any time, sender send message and save to vault, it'd leave no matter whether receiver get it or not.
         to.map { initiateFlow(it).send(newChatInfo) }
 
@@ -57,9 +58,7 @@ class CreateChatFlow(
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
 
-        return serviceHub.vaultService.queryBy<ChatInfo>(
-                QueryCriteria.LinearStateQueryCriteria(linearId = listOf(newChatInfo.linearId))
-        ).states.single()
+        return ServiceUtils.getChatHead(serviceHub, newChatInfo.linearId)
     }
 }
 
@@ -71,11 +70,14 @@ class CreateChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
 
-        // "receive" a message, then save to vault.
-        // even when the node is off for a long time, still the chat will not be blocked by me
-        val chatInfo = flowSession.receive<ChatInfo>().unwrap{it}
+        // @TODO choose notary should be put to service utils because different parties may choose different notary
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
+
+        // @TODO: use FlowLogic::receiveAllMap or ::receiveAll for better performance
+        // "receive" a message, then save to vault.
+        val chatInfo = flowSession.receive<ChatInfo>().unwrap{it}
         val txnBuilder = TransactionBuilder(notary = notary)
+                // no input
                 .addOutputState(chatInfo)
                 .addCommand(Create(), listOf(serviceHub.myInfo.legalIdentities.single().owningKey))
                 .also {

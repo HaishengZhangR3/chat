@@ -44,7 +44,7 @@ class ChatInfoContract : Contract {
                 require(tx.inputStates.size == 1) { "There should only be one input chat state." }
                 require(tx.outputStates.size == 0) { "There should be no output chat state." }
                 val requiredSigners = command.signers
-                require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
+                require(requiredSigners.size >= 1) { "There should more one required signer for a chat: from and to list." }
 
                 // in.linearId must != null
             }

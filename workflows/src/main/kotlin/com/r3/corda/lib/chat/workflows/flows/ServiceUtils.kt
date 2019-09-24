@@ -13,8 +13,8 @@ import net.corda.core.node.services.vault.SortAttribute
 
 object ServiceUtils {
 
-    // @todo: should any reply & finalize chat consume **all** of the on-ledge states or just the head one?
-    fun getChats(serviceHub: ServiceHub, linearId: UniqueIdentifier): List<StateAndRef<ChatInfo>> {
+    // get the chats thread from storage based on the linearId
+    private fun getChats(serviceHub: ServiceHub, linearId: UniqueIdentifier): List<StateAndRef<ChatInfo>> {
         val sorting = Sort(setOf(Sort.SortColumn(
                 SortAttribute.Custom(PersistentChatInfo::class.java, "created"),
                 Sort.Direction.DESC
@@ -30,7 +30,8 @@ object ServiceUtils {
         }
     }
 
-    // get the head of the chat thread from storage based on the linearId
+    // any reply chat or finalize chat or add/remove participants should consume the head on-ledge state,
+    // as a result, anytime, there s only one head of the chat chain.
     fun getChatHead(serviceHub: ServiceHub, linearId: UniqueIdentifier): StateAndRef<ChatInfo> =
         getChats(serviceHub, linearId).first()
 }

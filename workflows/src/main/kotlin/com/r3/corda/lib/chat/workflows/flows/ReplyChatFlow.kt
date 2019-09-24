@@ -12,7 +12,7 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 
 /**
- * A flow to create a new chat.
+ * A flow to reply a chat.
  *
  */
 @InitiatingFlow
@@ -41,10 +41,7 @@ class ReplyChatFlow(
                 linearId = linearId
         )
 
-        // @TODO: should use the same notary as before in the chat thread
-        val notary = serviceHub.networkMapCache.notaryIdentities.first()
-
-        val txnBuilder = TransactionBuilder(notary = notary)
+        val txnBuilder = TransactionBuilder(notary = inputChatInfo.state.notary)
                 .addInputState(inputChatInfo)
                 .addOutputState(outputChatInfo)
                 .addCommand(Reply(), from.owningKey)
@@ -70,14 +67,13 @@ class ReplyChatFlow(
 class ReplyChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val notary = serviceHub.networkMapCache.notaryIdentities.first()
 
         // "receive" a message, then save to vault.
         // even when the node is off for a long time, still the chat will not be blocked by me
         val chatInfo = flowSession.receive<ChatInfo>().unwrap{ it }
         val input = ServiceUtils.getChatHead(serviceHub, chatInfo.linearId)
 
-        val txnBuilder = TransactionBuilder(notary = notary)
+        val txnBuilder = TransactionBuilder(notary = input.state.notary)
                 .addInputState(input)
                 .addOutputState(chatInfo)
                 .addCommand(Reply(), listOf(serviceHub.myInfo.legalIdentities.single().owningKey))

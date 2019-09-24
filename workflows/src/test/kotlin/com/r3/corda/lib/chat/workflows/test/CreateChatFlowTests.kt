@@ -42,14 +42,14 @@ class CreateChatFlowTests {
     }
 
     @Test
-    fun `should be possible to reply a chat`() {
+    fun `should be possible to create a chat`() {
 
         val chatFlow = nodeA.startFlow(CreateChatFlow(
                 "subject",
                 "content",
                 null,
                 nodeA.info.legalIdentities.single(),
-                listOf(nodeB.info.legalIdentities.single())
+                 listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
         val chatInfo = chatFlow.getOrThrow()
