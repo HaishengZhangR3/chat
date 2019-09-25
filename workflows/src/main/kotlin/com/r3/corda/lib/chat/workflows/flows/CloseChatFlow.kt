@@ -19,9 +19,9 @@ import net.corda.core.utilities.unwrap
 @StartableByService
 @StartableByRPC
 class CloseChatFlow(
-        val from: Party,
-        val to: List<Party>,
-        val linearId: UniqueIdentifier
+        private val from: Party,
+        private val to: List<Party>,
+        private val linearId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable

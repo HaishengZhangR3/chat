@@ -22,9 +22,9 @@ import java.time.Instant
 @BelongsToContract(ChatInfoContract::class)
 data class ChatInfo(
         val created: Instant = Instant.now(),
-        val subject: String,
-        val content: String,
-        val attachment: SecureHash?,
+        val subject: String = "",
+        val content: String = "",
+        val attachment: SecureHash? = null,
         val from: Party,
         val to: List<Party>,
         override val linearId: UniqueIdentifier
