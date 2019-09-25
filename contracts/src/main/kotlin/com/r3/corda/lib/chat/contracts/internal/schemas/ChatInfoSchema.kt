@@ -17,15 +17,17 @@ object ChatSchema : MappedSchema(
 @Table(
         name = "chat",
         uniqueConstraints = [
-            UniqueConstraint(name = "id_constraint", columnNames = ["identifier", "created"])
+            UniqueConstraint(name = "id_constraint",
+                    columnNames = ["identifier", "created", "output_index", "transaction_id"])
         ],
         indexes = [
-            Index(name = "chatId_idx", columnList = "identifier")
+            Index(name = "chatId_idx", columnList = "identifier", unique = false),
+            Index(name = "chatCreated_idx", columnList = "created", unique = false)
         ]
 )
 data class PersistentChatInfo(
         // created time
-        @Column(name = "created", unique = true, nullable = false)
+        @Column(name = "created", unique = false, nullable = false)
         val created: Instant,
         // identifier is the linearId to indicate a chat thread
         @Column(name = "identifier", unique = false, nullable = false)

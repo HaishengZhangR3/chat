@@ -23,10 +23,10 @@ class CloseChatFlow(
         val from: Party,
         val to: List<Party>,
         val linearId: UniqueIdentifier
-) : FlowLogic<StateAndRef<ChatInfo>>() {
+) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
-    override fun call(): StateAndRef<ChatInfo> {
+    override fun call(): SignedTransaction {
 
         val inputChatInfo = ServiceUtils.getChatHead(serviceHub, linearId)
         val txnBuilder = TransactionBuilder(notary = inputChatInfo.state.notary)
@@ -43,9 +43,7 @@ class CloseChatFlow(
 
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
 
-        val finalFlow = subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
-
-        return finalFlow.coreTransaction.outRefsOfType(ChatInfo::class.java).single()
+        return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
 }
 
@@ -53,9 +51,9 @@ class CloseChatFlow(
  * This is the flow which responds to close chat.
  */
 @InitiatedBy(CloseChatFlow::class)
-class CloseChatFlowResponder(val otherSession: FlowSession): FlowLogic<Unit>() {
+class CloseChatFlowResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
     @Suspendable
-    override fun call() {
+    override fun call(): SignedTransaction {
 
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction) = requireThat{
@@ -65,10 +63,6 @@ class CloseChatFlowResponder(val otherSession: FlowSession): FlowLogic<Unit>() {
         }
 
         val signTxn = subFlow(transactionSigner)
-        subFlow(ReceiveFinalityFlow(
-                otherSideSession =  otherSession,
-                expectedTxId = signTxn.id,
-                statesToRecord = StatesToRecord.ALL_VISIBLE
-                ))
+        return subFlow(ReceiveFinalityFlow(otherSession, signTxn.id))
     }
 }

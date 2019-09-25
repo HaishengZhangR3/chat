@@ -44,7 +44,7 @@ class CloseChatFlowTests {
     }
 
     @Test
-    fun `should be possible to reply a chat`() {
+    fun `should be possible to close a chat`() {
 
         // 1 create one
         val newChatFlow = nodeA.startFlow(CreateChatFlow(
@@ -64,37 +64,6 @@ class CloseChatFlowTests {
         val newChatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
         Assert.assertTrue(newChatInfoInVaultA.state == newChatInfoInVaultB.state)
 
-        // 2 reply the chat
-        val replyFlow = nodeB.startFlow(
-                ReplyChatFlow(
-                        "subject",
-                        "content",
-                        null,
-                        nodeB.info.legalIdentities.single(),
-                        listOf(nodeA.info.legalIdentities.single()),
-                        newChatInfoInVaultB.state.data.linearId
-                )
-        )
-
-        network.runNetwork()
-        val replyChatInfo = replyFlow.getOrThrow()
-
-        // the reply chat id === thread id
-        Assert.assertTrue(replyChatInfo.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
-
-        // there are one chat on ledge in each node
-        val replyChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
-        val replyChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
-        Assert.assertTrue(replyChatsInVaultA.size == 1)
-        Assert.assertTrue(replyChatsInVaultB.size == 1)
-
-        // replied chat should be newer than created chat
-        val newChatDate = newChatInfo.state.data.created
-        val replyChatDate = replyChatInfo.state.data.created
-        Assert.assertTrue(newChatDate < replyChatDate)
-
-        // all of them have same id
-        Assert.assertTrue((replyChatsInVaultA + replyChatsInVaultB).map { it.state.data.linearId }.toSet().size == 1)
 
         // 3. close chat
         val closeFlow = nodeA.startFlow(
@@ -105,9 +74,7 @@ class CloseChatFlowTests {
                 )
         )
         network.runNetwork()
-        val closeChatInfo = closeFlow.getOrThrow()
-        Assert.assertTrue(closeChatInfo.state.data == null)
-
+        closeFlow.getOrThrow()
 
         // there are 0 chat on ledge in each node
         val closeChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states

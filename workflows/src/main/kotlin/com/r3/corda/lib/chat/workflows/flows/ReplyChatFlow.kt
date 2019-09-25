@@ -76,7 +76,7 @@ class ReplyChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
         val txnBuilder = TransactionBuilder(notary = input.state.notary)
                 .addInputState(input)
                 .addOutputState(chatInfo)
-                .addCommand(Reply(), listOf(serviceHub.myInfo.legalIdentities.single().owningKey))
+                .addCommand(Reply(), listOf(ourIdentity.owningKey))
                 .also {
                     it.verify(serviceHub)
                 }
