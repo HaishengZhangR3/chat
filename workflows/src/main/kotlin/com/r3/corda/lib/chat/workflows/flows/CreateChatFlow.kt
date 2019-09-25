@@ -79,7 +79,7 @@ class CreateChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
         val txnBuilder = TransactionBuilder(notary = notary)
                 // no input
                 .addOutputState(chatInfo)
-                .addCommand(Create(), listOf(serviceHub.myInfo.legalIdentities.single().owningKey))
+                .addCommand(Create(), listOf(ourIdentity.owningKey))
                 .also {
                     it.verify(serviceHub)
                 }
