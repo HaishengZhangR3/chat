@@ -37,7 +37,7 @@ object ServiceUtils {
         }
     }
 
-    private fun getAllChats(serviceHub: ServiceHub, linearId: UniqueIdentifier) =
+    fun getAllChats(serviceHub: ServiceHub, linearId: UniqueIdentifier) =
             getChats(serviceHub, linearId, StateStatus.ALL)
 
     fun getActiveChats(serviceHub: ServiceHub, linearId: UniqueIdentifier) =

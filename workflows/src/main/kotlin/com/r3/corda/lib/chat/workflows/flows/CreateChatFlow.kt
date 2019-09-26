@@ -8,8 +8,6 @@ import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.node.services.queryBy
-import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 import java.util.*
@@ -70,10 +68,8 @@ class CreateChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
 
-        // @TODO choose notary should be put to service utils because different parties may choose different notary
-        val notary = serviceHub.networkMapCache.notaryIdentities.first()
+        val notary = ServiceUtils.notary(serviceHub)
 
-        // @TODO: use FlowLogic::receiveAllMap or ::receiveAll for better performance
         // "receive" a message, then save to vault.
         val chatInfo = flowSession.receive<ChatInfo>().unwrap{it}
         val txnBuilder = TransactionBuilder(notary = notary)

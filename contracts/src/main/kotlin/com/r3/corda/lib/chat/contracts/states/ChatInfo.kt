@@ -14,6 +14,8 @@ import net.corda.core.schemas.PersistentState
 import net.corda.core.schemas.QueryableState
 import java.time.Instant
 
+typealias ChatID = UniqueIdentifier
+
 /**
  * A state which records the chat subject, contents as well as the participants.
  * @TODO add a status indicating if the chat is closed or still opening
@@ -27,7 +29,7 @@ data class ChatInfo(
         val attachment: SecureHash? = null,
         val from: Party,
         val to: List<Party>,
-        override val linearId: UniqueIdentifier
+        override val linearId: ChatID
 ) : LinearState, QueryableState {
 
     override val participants: List<AbstractParty> get() = to + from

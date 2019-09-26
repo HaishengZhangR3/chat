@@ -56,6 +56,7 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.size >= 1) { "There should more one required signer for a chat: from and to list." }
 
+                // action must be add
                 // toAdd list should not have duplicate
                 // toAdd list should not be empty
                 // in.linearId must != null

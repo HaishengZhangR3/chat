@@ -1,9 +1,8 @@
 package com.r3.corda.lib.chat.workflows.test
 
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.workflows.flows.AddParticipantsFlow
+import com.r3.corda.lib.chat.workflows.flows.SyncUpChatHistoryFlow
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -15,7 +14,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class AddParticipantsFlowTests {
+class SyncUpChatHistoryFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -66,49 +65,21 @@ class AddParticipantsFlowTests {
         val newChatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
         Assert.assertTrue(newChatInfoInVaultA.state == newChatInfoInVaultB.state)
 
-        // 2 reply the chat
-        val replyFlow = nodeB.startFlow(
-                ReplyChatFlow(
-                        "subject",
-                        "content",
-                        null,
-                        nodeB.info.legalIdentities.single(),
-                        listOf(nodeA.info.legalIdentities.single()),
-                        newChatInfoInVaultB.state.data.linearId
-                )
-        )
 
-        network.runNetwork()
-        val replyChatInfo = replyFlow.getOrThrow()
-
-        // the reply chat id === thread id
-        Assert.assertTrue(replyChatInfo.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
-
-        // there are one chat on ledge in each node
-        val replyChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
-        val replyChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
-        Assert.assertTrue(replyChatsInVaultA.size == 1)
-        Assert.assertTrue(replyChatsInVaultB.size == 1)
-
-        // replied chat should be newer than created chat
-        val newChatDate = newChatInfo.state.data.created
-        val replyChatDate = replyChatInfo.state.data.created
-        Assert.assertTrue(newChatDate < replyChatDate)
-
-        // all of them have same id
-        Assert.assertTrue((replyChatsInVaultA + replyChatsInVaultB).map { it.state.data.linearId }.toSet().size == 1)
-
-        // 3. add new participants
-        val addParticipantsFlow = nodeB.startFlow(
-                AddParticipantsFlow(
+        // 2. sync up to C
+        val syncUpChatHistoryFlow = nodeB.startFlow(
+                SyncUpChatHistoryFlow(
                         listOf(nodeC.info.legalIdentities.single()),
-                        true,
                         newChatInfoInVaultB.state.data.linearId
                 )
         )
 
         network.runNetwork()
-        replyFlow.getOrThrow()
+        syncUpChatHistoryFlow.getOrThrow()
+
+        // check whether the created one in node B is same as that in the DB of host node A
+        val newChatInfoInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states.single()
+        Assert.assertTrue(newChatInfoInVaultC.state == newChatInfoInVaultB.state)
 
     }
 }
