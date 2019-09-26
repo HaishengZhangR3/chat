@@ -19,6 +19,7 @@ class CloseChatFlowTests {
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
     lateinit var nodeB: StartedMockNode
+    lateinit var nodeC: StartedMockNode
 
     @Before
     fun setup() {
@@ -33,6 +34,7 @@ class CloseChatFlowTests {
         )
         nodeA = network.createPartyNode()
         nodeB = network.createPartyNode()
+        nodeC = network.createPartyNode()
 
         network.runNetwork()
     }
@@ -51,7 +53,7 @@ class CloseChatFlowTests {
                 "content",
                 null,
                 nodeA.info.legalIdentities.single(),
-                listOf(nodeB.info.legalIdentities.single())
+                listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single())
         ))
         network.runNetwork()
         val newChatInfo = newChatFlow.getOrThrow()
@@ -63,12 +65,15 @@ class CloseChatFlowTests {
         val newChatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
         Assert.assertTrue(newChatInfoInVaultA.state == newChatInfoInVaultB.state)
 
+        // check whether the created one in node B is same as that in the DB of host node A
+        val newChatInfoInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states.single()
+        Assert.assertTrue(newChatInfoInVaultC.state == newChatInfoInVaultB.state)
 
         // 3. close chat
         val closeFlow = nodeA.startFlow(
                 CloseChatFlow(
                         nodeA.info.legalIdentities.single(),
-                        listOf(nodeB.info.legalIdentities.single()),
+                        listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single()),
                         newChatInfoInVaultB.state.data.linearId
                 )
         )
@@ -78,8 +83,10 @@ class CloseChatFlowTests {
         // there are 0 chat on ledge in each node
         val closeChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
         val closeChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
+        val closeChatsInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states
         Assert.assertTrue(closeChatsInVaultA.size == 0)
         Assert.assertTrue(closeChatsInVaultB.size == 0)
+        Assert.assertTrue(closeChatsInVaultC.size == 0)
 
 
     }

@@ -27,7 +27,7 @@ class AddParticipantsAgreeFlow(
         val txnToAgree = serviceHub.validatedTransactions.getTransaction(txnId) as SignedTransaction
         val stateToAgree = txnToAgree.coreTransaction.outputsOfType<ParticipantsUpdateState>().single()
 
-        val allParties = inputChatInfo.state.data.run { this.to + this.from + stateToAgree.to}
+        val allParties = inputChatInfo.state.data.run { this.to + this.from + stateToAgree.toUpdate}
         val toParties = allParties - stateToAgree.from
 
         val outputChatInfo = ChatInfo(
@@ -65,7 +65,7 @@ class AddParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowLogi
 
         // the proposer side is responsible of sending history chat to new added participants
         if (participantsUpdate.from == ourIdentity) {
-            subFlow(SyncUpChatHistoryFlow(participantsUpdate.to, participantsUpdate.linearId))
+            subFlow(SyncUpChatHistoryFlow(participantsUpdate.toUpdate, participantsUpdate.linearId))
         }
 
         val transactionSigner = object : SignTransactionFlow(otherSession) {

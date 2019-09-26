@@ -29,7 +29,8 @@ class AddParticipantsProposeFlow(
 
         val participantsUpdate = ParticipantsUpdateState(
                 from = ourIdentity,
-                to = toAdd,
+                toUpdate = toAdd,
+                allParticipants = allParties,
                 action = ParticipantsAction.ADD,
                 includingHistoryChat = includingHistoryChat,
                 linearId = linearId

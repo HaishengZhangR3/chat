@@ -19,7 +19,6 @@ class SyncUpChatHistoryFlow(
     override fun call(): Unit {
         val historyChats = ServiceUtils.getActiveChats(serviceHub, chatId)
         val newChats = historyChats.map { it.state.data }
-                // @TODO: it does not work if I keep it.to no change.
                 .map { it.copy(to = it.to + to) }
         to.map { initiateFlow(it).send(newChats) }
     }
