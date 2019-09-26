@@ -29,7 +29,7 @@ class CreateChatFlow(
 
     @Suspendable
     override fun call(): StateAndRef<ChatInfo> {
-        val notary = serviceHub.networkMapCache.notaryIdentities.first()
+        val notary = ServiceUtils.notary(serviceHub)
         val newChatInfo = ChatInfo(
                 subject = subject,
                 content = content,
@@ -43,9 +43,7 @@ class CreateChatFlow(
                 // no input
                 .addOutputState(newChatInfo)
                 .addCommand(Create(), from.owningKey)
-                .also {
-                    it.verify(serviceHub)
-                }
+                .also { it.verify(serviceHub) }
 
         // send to "to" list.
         // why we chat with "send" instead of other way is because "send" is non-blockable,
@@ -76,9 +74,7 @@ class CreateChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
                 // no input
                 .addOutputState(chatInfo)
                 .addCommand(Create(), listOf(ourIdentity.owningKey))
-                .also {
-                    it.verify(serviceHub)
-                }
+                .also { it.verify(serviceHub) }
 
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)

@@ -45,7 +45,7 @@ class SyncUpChatHistoryFlowTests {
     }
 
     @Test
-    fun `should be possible to reply a chat`() {
+    fun `should be possible to sync up chat history to new added participants`() {
 
         // 1 create one
         val newChatFlow = nodeA.startFlow(CreateChatFlow(
@@ -79,7 +79,7 @@ class SyncUpChatHistoryFlowTests {
 
         // check whether the created one in node B is same as that in the DB of host node A
         val newChatInfoInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfoInVaultC.state == newChatInfoInVaultB.state)
+        Assert.assertTrue(newChatInfoInVaultC.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
 
     }
 }
