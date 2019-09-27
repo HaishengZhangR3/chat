@@ -64,6 +64,14 @@ class ChatInfoContract : Contract {
                 // new added must not be in existing list
                 // max amount of to?
             }
+            is AgreeAddParticipants -> {
+//                require(tx.inputStates.size == 1) { "There should only be one input chat state." }
+                val requiredSigners = command.signers
+//                require(requiredSigners.size == 2) { "There should more one required signer for a chat: from and to list." }
+
+                // same check with AddParticipants for the state
+
+            }
             is RemoveParticipants -> {
                 require(tx.inputStates.size == 1) { "There should only be one input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }

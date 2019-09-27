@@ -17,8 +17,9 @@ class SyncUpChatHistoryFlow(
 ) : FlowLogic<Unit>() {
     @Suspendable
     override fun call(): Unit {
-        val historyChats = ServiceUtils.getActiveChats(serviceHub, chatId)
+        val historyChats = ServiceUtils.getAllChats(serviceHub, chatId)
         val newChats = historyChats.map { it.state.data }
+                // @todo: should not change it.to, instead add another allParticipants field in ChatInfo
                 .map { it.copy(to = it.to + to) }
         to.map { initiateFlow(it).send(newChats) }
     }

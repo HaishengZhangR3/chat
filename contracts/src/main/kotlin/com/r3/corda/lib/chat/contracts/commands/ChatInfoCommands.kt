@@ -10,4 +10,5 @@ class Reply : ChatCommand
 class Close : ChatCommand
 
 class AddParticipants : ChatCommand
+class AgreeAddParticipants : ChatCommand
 class RemoveParticipants : ChatCommand

@@ -2,9 +2,11 @@ package com.r3.corda.lib.chat.workflows.flows
 
 import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatInfo
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.ParticipantsUpdateState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.FlowException
+import net.corda.core.identity.Party
 import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.Vault.StateStatus
 import net.corda.core.node.services.queryBy
@@ -14,37 +16,60 @@ import net.corda.core.node.services.vault.SortAttribute
 
 object ServiceUtils {
 
+    /*  find notary */
     fun notary(serviceHub: ServiceHub) =
             serviceHub.networkMapCache.notaryIdentities.first()
 
-    fun notary(serviceHub: ServiceHub, linearId: UniqueIdentifier) =
-            getChatHead(serviceHub, linearId).state.notary
+    fun notary(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
+            getChatHead(serviceHub, chatId).state.notary
 
-    // get the chats thread from storage based on the linearId
-    private fun getChats(serviceHub: ServiceHub, linearId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<ChatInfo>> {
+    /* get chat from vault */
+    // get the chats thread from storage based on the chatId
+    private fun getChats(serviceHub: ServiceHub, chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<ChatInfo>> {
         val sorting = Sort(setOf(Sort.SortColumn(
                 SortAttribute.Custom(PersistentChatInfo::class.java, "created"),
                 Sort.Direction.DESC
         )))
 
         val stateAndRefs = serviceHub.vaultService.queryBy<ChatInfo>(
-                criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(linearId), status = status),
+                criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(chatId), status = status),
                 sorting = sorting)
 
         return when {
             stateAndRefs.states.isNotEmpty() -> stateAndRefs.states
-            else -> throw FlowException("No such chat of linearId == $linearId found in vault.")
+            else -> throw FlowException("No such chat of chatId == $chatId found in vault.")
         }
     }
 
-    fun getAllChats(serviceHub: ServiceHub, linearId: UniqueIdentifier) =
-            getChats(serviceHub, linearId, StateStatus.ALL)
+    fun getAllChats(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
+            getChats(serviceHub, chatId, StateStatus.ALL)
 
-    fun getActiveChats(serviceHub: ServiceHub, linearId: UniqueIdentifier) =
-            getChats(serviceHub, linearId)
+    fun getActiveChats(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
+            getChats(serviceHub, chatId)
 
     // any reply chat or finalize chat or add/remove participants should consume the head on-ledge state,
     // as a result, anytime, there s only one head of the chat chain.
-    fun getChatHead(serviceHub: ServiceHub, linearId: UniqueIdentifier): StateAndRef<ChatInfo> =
-            getActiveChats(serviceHub, linearId).first()
+    fun getChatHead(serviceHub: ServiceHub, chatId: UniqueIdentifier): StateAndRef<ChatInfo> =
+            getActiveChats(serviceHub, chatId).first()
+
+    /* get ParticipantsUpdateState from vault */
+    private fun getParticipantsUpdateStates(serviceHub: ServiceHub, chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<ParticipantsUpdateState>> {
+
+        val stateAndRefs = serviceHub.vaultService.queryBy<ParticipantsUpdateState>(
+                criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(chatId), status = status))
+
+        return when {
+            stateAndRefs.states.isNotEmpty() -> stateAndRefs.states
+            else -> emptyList()
+        }
+    }
+
+    fun getHeadParticipantsUpdateStates(serviceHub: ServiceHub, chatId: UniqueIdentifier): StateAndRef<ParticipantsUpdateState>? =
+            getParticipantsUpdateStates(serviceHub, chatId).sortedByDescending { it.state.data.created }.firstOrNull()
+
+    fun getActiveParticipantsUpdateStates(serviceHub: ServiceHub, chatId: UniqueIdentifier, from: Party): Set<StateAndRef<ParticipantsUpdateState>> =
+            getParticipantsUpdateStates(serviceHub, chatId)
+                    .filter { it.state.data.from == from && it.state.data.linearId == chatId}
+                    .toSet()
+
 }
