@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.test
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -52,28 +53,29 @@ class CloseChatFlowTests {
                 "subject",
                 "content",
                 null,
-                listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single())
+                listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-//        val newChatInfo = newChatFlow.getOrThrow()
+        val txnNew = newChatFlow.getOrThrow()
 
-        val newChatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-//        Assert.assertTrue(newChatInfo == newChatInfoInVaultA)
+        val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
 
-        // check whether the created one in node B is same as that in the DB of host node A
-        val newChatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfoInVaultA.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
+        // 2 reply the chat
+        val replyFlow = nodeB.startFlow(
+                ReplyChatFlow(
+                        "content",
+                        null,
+                        newChatInfoB.linearId
+                )
+        )
 
-        // check whether the created one in node B is same as that in the DB of host node A
-        val newChatInfoInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfoInVaultC.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
+        network.runNetwork()
+        val txnReply = replyFlow.getOrThrow()
 
         // 3. close chat
         val closeFlow = nodeA.startFlow(
                 CloseChatFlow(
-                        nodeA.info.legalIdentities.single(),
-                        listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single()),
-                        newChatInfoInVaultB.state.data.linearId
+                        newChatInfoB.linearId
                 )
         )
         network.runNetwork()
@@ -83,10 +85,9 @@ class CloseChatFlowTests {
         val closeChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
         val closeChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
         val closeChatsInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states
-        Assert.assertTrue(closeChatsInVaultA.size == 0)
-        Assert.assertTrue(closeChatsInVaultB.size == 0)
-        Assert.assertTrue(closeChatsInVaultC.size == 0)
-
+        Assert.assertTrue(closeChatsInVaultA.isEmpty())
+        Assert.assertTrue(closeChatsInVaultB.isEmpty())
+        Assert.assertTrue(closeChatsInVaultC.isEmpty())
 
     }
 }

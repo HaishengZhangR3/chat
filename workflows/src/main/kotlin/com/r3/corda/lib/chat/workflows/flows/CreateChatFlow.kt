@@ -31,13 +31,14 @@ class CreateChatFlow(
     @Suspendable
     override fun call(): SignedTransaction {
         val notary = ServiceUtils.notary(serviceHub)
+        val toList = to.distinct()
         val newChatInfo = ChatInfo(
                 linearId = UniqueIdentifier.fromString(UUID.randomUUID().toString()),
                 subject = subject,
                 content = content,
                 attachment = attachment,
                 from = ourIdentity,
-                to = to,
+                to = toList,
                 participants = listOf(ourIdentity)
         )
 
@@ -49,7 +50,7 @@ class CreateChatFlow(
         // send to "to" list.
         // why we chat with "send" instead of other way is because "send" is non-blockable,
         // meaning, any time, sender send message and save to vault, it'd leave no matter whether receiver get it or not.
-        to.map { initiateFlow(it).send(newChatInfo) }
+        toList.map { initiateFlow(it).send(newChatInfo) }
 
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
