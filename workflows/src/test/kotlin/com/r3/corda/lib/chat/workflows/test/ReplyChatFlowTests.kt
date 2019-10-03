@@ -61,7 +61,7 @@ class ReplyChatFlowTests {
 
         // check whether the created one in node B is same as that in the DB of host node A
         val newChatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfoInVaultA.state == newChatInfoInVaultB.state)
+        Assert.assertTrue(newChatInfoInVaultA.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
 
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(

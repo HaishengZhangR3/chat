@@ -20,11 +20,11 @@ import java.util.*
 @StartableByService
 @StartableByRPC
 class CreateChatFlow(
-        val subject: String,
-        val content: String,
-        val attachment: SecureHash?,
-        val from: Party,
-        val to: List<Party>
+        private val subject: String,
+        private val content: String,
+        private val attachment: SecureHash?,
+        private val from: Party,
+        private val to: List<Party>
 ) : FlowLogic<StateAndRef<ChatInfo>>() {
 
     @Suspendable
@@ -40,7 +40,6 @@ class CreateChatFlow(
         )
 
         val txnBuilder = TransactionBuilder(notary = notary)
-                // no input
                 .addOutputState(newChatInfo)
                 .addCommand(Create(), from.owningKey)
                 .also { it.verify(serviceHub) }
@@ -62,17 +61,16 @@ class CreateChatFlow(
  * This is the flow which responds to create chat.
  */
 @InitiatedBy(CreateChatFlow::class)
-class CreateChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
+class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
 
         val notary = ServiceUtils.notary(serviceHub)
 
         // "receive" a message, then save to vault.
-        val chatInfo = flowSession.receive<ChatInfo>().unwrap{it}
+        val chatInfo = flowSession.receive<ChatInfo>().unwrap{ it }
         val txnBuilder = TransactionBuilder(notary = notary)
-                // no input
-                .addOutputState(chatInfo)
+                .addOutputState(chatInfo.copy(participants = listOf(ourIdentity)))
                 .addCommand(Create(), listOf(ourIdentity.owningKey))
                 .also { it.verify(serviceHub) }
 

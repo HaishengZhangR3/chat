@@ -18,21 +18,19 @@ typealias ChatID = UniqueIdentifier
 
 /**
  * A state which records the chat subject, contents as well as the participants.
- * @TODO add a status indicating if the chat is closed or still opening
- * @TODO create a type: chat thread id, instead of using linearId: UniqueIdentifier
  */
 @BelongsToContract(ChatInfoContract::class)
 data class ChatInfo(
+        override val linearId: ChatID,
         val created: Instant = Instant.now(),
         val subject: String = "",
         val content: String = "",
         val attachment: SecureHash? = null,
         val from: Party,
         val to: List<Party>,
-        override val linearId: ChatID
+        override val participants: List<AbstractParty> = to + from
 ) : LinearState, QueryableState {
 
-    override val participants: List<AbstractParty> get() = to + from
 
     override fun generateMappedObject(schema: MappedSchema): PersistentState =
         when (schema){
@@ -52,6 +50,7 @@ data class ChatInfo(
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatSchema)
 
-    override fun toString(): String =
-            "ChatInfo(subject='$subject', content='$content', attachment=$attachment, from=$from, to=$to, linearId=$linearId)"
+    override fun toString(): String {
+        return "ChatInfo(linearId=$linearId, created=$created, subject='$subject', content='$content', attachment=$attachment, from=$from, to=$to)"
+    }
 }

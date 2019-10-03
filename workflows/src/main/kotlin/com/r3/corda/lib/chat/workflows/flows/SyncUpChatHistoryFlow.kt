@@ -19,8 +19,6 @@ class SyncUpChatHistoryFlow(
     override fun call(): Unit {
         val historyChats = ServiceUtils.getAllChats(serviceHub, chatId)
         val newChats = historyChats.map { it.state.data }
-                // @todo: should not change it.to, instead add another allParticipants field in ChatInfo
-                .map { it.copy(to = it.to + to) }
         to.map { initiateFlow(it).send(newChats) }
     }
 }
@@ -36,9 +34,9 @@ class SyncUpChatHistoryFlowResponder(private val otherSession: FlowSession) : Fl
         val txns = historyChats.map {
             val txnBuilder = TransactionBuilder(notary = notary)
                     // no input
-                    .addOutputState(it)
+                    .addOutputState( it.copy(participants = listOf(ourIdentity)) )
                     .addCommand(Create(), listOf(ourIdentity.owningKey))
-                    .also { it.verify(serviceHub) }
+            txnBuilder.verify(serviceHub)
             serviceHub.signInitialTransaction(txnBuilder)
         }
         serviceHub.recordTransactions(txns)

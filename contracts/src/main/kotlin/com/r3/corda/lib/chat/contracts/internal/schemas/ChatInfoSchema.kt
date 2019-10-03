@@ -26,12 +26,12 @@ object ChatSchema : MappedSchema(
         ]
 )
 data class PersistentChatInfo(
-        // created time
-        @Column(name = "created", unique = false, nullable = false)
-        val created: Instant,
         // identifier is the linearId to indicate a chat thread
         @Column(name = "identifier", unique = false, nullable = false)
         val identifier: UUID,
+        // created time
+        @Column(name = "created", unique = false, nullable = false)
+        val created: Instant,
         @Column(name = "subject", unique = false, nullable = false)
         val subject: String,
         @Column(name = "content", unique = false, nullable = false)
