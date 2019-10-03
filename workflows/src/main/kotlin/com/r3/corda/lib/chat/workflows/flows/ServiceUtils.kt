@@ -1,12 +1,13 @@
 package com.r3.corda.lib.chat.workflows.flows
 
 import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatInfo
+import com.r3.corda.lib.chat.contracts.states.ChatBaseState
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.contracts.states.ParticipantsUpdateState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.FlowException
-import net.corda.core.identity.Party
 import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.Vault.StateStatus
 import net.corda.core.node.services.queryBy
@@ -52,10 +53,10 @@ object ServiceUtils {
     fun getChatHead(serviceHub: ServiceHub, chatId: UniqueIdentifier): StateAndRef<ChatInfo> =
             getActiveChats(serviceHub, chatId).first()
 
-    /* get ParticipantsUpdateState from vault */
-    private fun getParticipantsUpdateStates(serviceHub: ServiceHub, chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<ParticipantsUpdateState>> {
+    /* get T: ChatBaseState from vault */
+    inline fun <reified T: ChatBaseState> getVaultStates(serviceHub: ServiceHub, chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<T>> {
 
-        val stateAndRefs = serviceHub.vaultService.queryBy<ParticipantsUpdateState>(
+        val stateAndRefs = serviceHub.vaultService.queryBy<T>(
                 criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(chatId), status = status))
 
         return when {
@@ -64,12 +65,26 @@ object ServiceUtils {
         }
     }
 
-    fun getHeadParticipantsUpdateStates(serviceHub: ServiceHub, chatId: UniqueIdentifier): StateAndRef<ParticipantsUpdateState>? =
-            getParticipantsUpdateStates(serviceHub, chatId).sortedByDescending { it.state.data.created }.firstOrNull()
+    inline fun <reified T: ChatBaseState> getHeadState(serviceHub: ServiceHub, chatId: UniqueIdentifier): StateAndRef<T>? =
+            getVaultStates<T>(serviceHub, chatId).sortedByDescending { it.state.data.created }.firstOrNull()
 
-    fun getActiveParticipantsUpdateStates(serviceHub: ServiceHub, chatId: UniqueIdentifier, from: Party): Set<StateAndRef<ParticipantsUpdateState>> =
-            getParticipantsUpdateStates(serviceHub, chatId)
-                    .filter { it.state.data.from == from && it.state.data.linearId == chatId}
+    inline fun <reified T: ChatBaseState> getActiveStates(serviceHub: ServiceHub, chatId: UniqueIdentifier): Set<StateAndRef<T>> =
+            getVaultStates<T>(serviceHub, chatId)
+                    .filter { it.state.data.linearId == chatId}
                     .toSet()
+
+    /* get ParticipantsUpdate head */
+    fun getHeadParticipantsUpdateState(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
+            getHeadState<ParticipantsUpdateState>(serviceHub, chatId)
+
+    fun getActiveParticipantsUpdateStates(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
+            getVaultStates<ParticipantsUpdateState>(serviceHub, chatId)
+
+    /* get CloseChatState head */
+    fun getHeadCloseChatState(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
+            getHeadState<CloseChatState>(serviceHub, chatId)
+
+    fun getActiveCloseChatStates(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
+            getVaultStates<CloseChatState>(serviceHub, chatId)
 
 }

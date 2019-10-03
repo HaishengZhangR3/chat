@@ -55,7 +55,7 @@ class SyncUpChatHistoryFlowTests {
                 listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-        val newChatInfo = newChatFlow.getOrThrow()
+        newChatFlow.getOrThrow()
 
         val newChatInfoA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
         val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data

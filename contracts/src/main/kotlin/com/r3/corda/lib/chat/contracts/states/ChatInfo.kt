@@ -16,21 +16,17 @@ import java.time.Instant
 
 typealias ChatID = UniqueIdentifier
 
-/**
- * A state which records the chat subject, contents as well as the participants.
- */
 @BelongsToContract(ChatInfoContract::class)
 data class ChatInfo(
         override val linearId: ChatID,
-        val created: Instant = Instant.now(),
+        override val created: Instant = Instant.now(),
         val subject: String = "",
         val content: String = "",
         val attachment: SecureHash? = null,
         val from: Party,
         val to: List<Party>,
         override val participants: List<AbstractParty>
-) : LinearState, QueryableState {
-
+) : ChatBaseState, QueryableState {
 
     override fun generateMappedObject(schema: MappedSchema): PersistentState =
             when (schema) {

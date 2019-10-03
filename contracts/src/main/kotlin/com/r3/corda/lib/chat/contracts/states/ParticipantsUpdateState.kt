@@ -17,14 +17,14 @@ sealed class ParticipantsAction {
 
 @BelongsToContract(ChatInfoContract::class)
 data class ParticipantsUpdateState(
-        val created: Instant = Instant.now(),
+        override val created: Instant = Instant.now(),
         val from: Party,
         val toUpdate: List<Party>,
         val allParticipants: List<Party>,
         val action: ParticipantsAction,
         val includingHistoryChat: Boolean,
         override val linearId: UniqueIdentifier
-) : LinearState {
+) : ChatBaseState {
     override val participants: List<AbstractParty> get() = allParticipants
     override fun toString(): String {
         return "ParticipantsUpdateState(created=$created, from=$from, toUpdate=$toUpdate, allParticipants=$allParticipants, action=$action, includingHistoryChat=$includingHistoryChat, linearId=$linearId)"

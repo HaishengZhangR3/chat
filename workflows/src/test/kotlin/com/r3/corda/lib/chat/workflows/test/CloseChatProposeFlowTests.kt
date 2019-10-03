@@ -1,9 +1,9 @@
 package com.r3.corda.lib.chat.workflows.test
 
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
+import com.r3.corda.lib.chat.contracts.states.CloseChatState
+import com.r3.corda.lib.chat.workflows.flows.CloseChatProposeFlow
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -15,7 +15,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class CloseChatFlowTests {
+class CloseChatProposeFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -60,34 +60,19 @@ class CloseChatFlowTests {
 
         val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
 
-        // 2 reply the chat
-        val replyFlow = nodeB.startFlow(
-                ReplyChatFlow(
-                        "content",
-                        null,
-                        newChatInfoB.linearId
-                )
-        )
-
-        network.runNetwork()
-        replyFlow.getOrThrow()
-
         // 3. close chat
-        val closeFlow = nodeA.startFlow(
-                CloseChatFlow(
+        val proposeClose = nodeA.startFlow(
+                CloseChatProposeFlow(
                         newChatInfoB.linearId
                 )
         )
         network.runNetwork()
-        closeFlow.getOrThrow()
+        proposeClose.getOrThrow()
 
         // there are 0 chat on ledge in each node
-        val closeChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
-        val closeChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
-        val closeChatsInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states
-        Assert.assertTrue(closeChatsInVaultA.isEmpty())
-        Assert.assertTrue(closeChatsInVaultB.isEmpty())
-        Assert.assertTrue(closeChatsInVaultC.isEmpty())
-
+        val closeChatsInVaultA = nodeA.services.vaultService.queryBy(CloseChatState::class.java).states
+        val closeChatsInVaultB = nodeB.services.vaultService.queryBy(CloseChatState::class.java).states
+        Assert.assertTrue(closeChatsInVaultA.size == 1)
+        Assert.assertTrue(closeChatsInVaultB.size == 1)
     }
 }

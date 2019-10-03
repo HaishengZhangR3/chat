@@ -60,7 +60,7 @@ class AddParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowLogi
                 when (stateToAgree.from) {
                     ourIdentity -> {
                         // we proposed to >1 parties, but we'd only send once
-                        val stateAndRef = ServiceUtils.getHeadParticipantsUpdateStates(serviceHub, stateToAgree.linearId)
+                        val stateAndRef = ServiceUtils.getHeadParticipantsUpdateState(serviceHub, stateToAgree.linearId)
                         when (stateAndRef){
                             null -> "Already send out, no any further action needed."
                             else -> {
@@ -70,7 +70,7 @@ class AddParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowLogi
                                 // if we collect all parties signature, then we'll consume the proposal state,
                                 // together with all of the counterparts' agree states, and issue nothing
                                 val allAgreeStates = ServiceUtils.getActiveParticipantsUpdateStates(
-                                        serviceHub, stateToAgree.linearId, ourIdentity)
+                                        serviceHub, stateToAgree.linearId)
                                 if (allAgreeStates.size == stateAndRef.state.data.allParticipants.size) {
 
                                     // consume everything, issue nothing

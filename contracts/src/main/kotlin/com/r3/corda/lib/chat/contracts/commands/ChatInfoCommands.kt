@@ -9,6 +9,7 @@ class Reply : ChatCommand
 class SyncUpHistory : ChatCommand
 
 class Close : ChatCommand
+class ProposeClose : ChatCommand
 class AgreeClose : ChatCommand
 class RejectClose : ChatCommand
 

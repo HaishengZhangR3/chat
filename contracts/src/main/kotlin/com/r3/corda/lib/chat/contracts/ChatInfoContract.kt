@@ -48,6 +48,32 @@ class ChatInfoContract : Contract {
 
                 // in.linearId must != null
             }
+            is ProposeClose -> {
+                require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
+                require(tx.outputStates.size == 1) { "There should be no output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
+
+                // in.linearId must != null
+            }
+            is AgreeClose -> {
+                require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
+                require(tx.outputStates.size == 1) { "There should be no output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
+
+                // in.linearId must != null
+            }
+
+            is RejectClose -> {
+                require(tx.inputStates.isNotEmpty()) { "There should be more input state." }
+                require(tx.outputStates.isEmpty()) { "There should be no output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.isNotEmpty()) { "There should be more than one required signer for a chat: from and to list." }
+
+                // in.linearId must != null
+            }
+
             is AddParticipants -> {
                 require(tx.inputStates.size == 1) { "There should only be one input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }

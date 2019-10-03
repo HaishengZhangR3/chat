@@ -11,10 +11,6 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 
-/**
- * A flow to close a chat.
- *
- */
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
