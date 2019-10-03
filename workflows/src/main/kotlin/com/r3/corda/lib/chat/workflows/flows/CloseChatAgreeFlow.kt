@@ -4,7 +4,9 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.AgreeClose
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.contracts.states.CloseChatStatus
+import net.corda.core.contracts.Requirements.using
 import net.corda.core.contracts.UniqueIdentifier
+import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -54,10 +56,6 @@ class CloseChatFlowAgreeResponder(val otherSession: FlowSession): FlowLogic<Sign
 
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction): Unit {
-
-                // @todo: how many "agree" we've got? if all agreed (including me),
-                // @todo: then the proposer should close the chat calling CloseChatFlow
-
             }
         }
         val signTxn = subFlow(transactionSigner)
