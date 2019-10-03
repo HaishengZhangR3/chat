@@ -50,50 +50,63 @@ class ReplyChatFlowTests {
                 "subject",
                 "content",
                 null,
-                nodeA.info.legalIdentities.single(),
                 listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-        val newChatInfo = newChatFlow.getOrThrow()
+        val txnNew = newChatFlow.getOrThrow()
+        val newChatInfo = txnNew.coreTransaction.outputStates.single() as ChatInfo
 
-        val newChatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfo == newChatInfoInVaultA)
-
-        // check whether the created one in node B is same as that in the DB of host node A
-        val newChatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfoInVaultA.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
+        val newChatInfoA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+        val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
 
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(
                 ReplyChatFlow(
-                        "subject",
                         "content",
                         null,
-                        nodeB.info.legalIdentities.single(),
-                        listOf(nodeA.info.legalIdentities.single()),
-                        newChatInfoInVaultB.state.data.linearId
+                        newChatInfoB.linearId
                 )
         )
 
         network.runNetwork()
-        val replyChatInfo = replyFlow.getOrThrow()
+        val txnReply = replyFlow.getOrThrow()
+        val replyChatInfo = txnReply.coreTransaction.outputStates.single() as ChatInfo
 
         // the reply chat id === thread id
-        Assert.assertTrue(replyChatInfo.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
+        Assert.assertTrue(replyChatInfo.linearId == newChatInfoB.linearId)
 
         // there are one chat on ledge in each node
-        val replyChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
-        val replyChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
-        Assert.assertTrue(replyChatsInVaultA.size == 1)
-        Assert.assertTrue(replyChatsInVaultB.size == 1)
+        val allChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
+        val allChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
+        Assert.assertTrue(allChatsInVaultA.size == 2)
+        Assert.assertTrue(allChatsInVaultB.size == 2)
+
+        val replyChatInfoA = allChatsInVaultA.sortedByDescending { it.state.data.created }.first().state.data
+        val replyChatInfoB = allChatsInVaultB.sortedByDescending { it.state.data.created }.first().state.data
 
         // replied chat should be newer than created chat
-        val newChatDate = newChatInfo.state.data.created
-        val replyChatDate = replyChatInfo.state.data.created
+        val newChatDate = newChatInfo.created
+        val replyChatDate = replyChatInfo.created
         Assert.assertTrue(newChatDate < replyChatDate)
 
         // all of them have same id
-        Assert.assertTrue((replyChatsInVaultA + replyChatsInVaultB).map { it.state.data.linearId }.toSet().size == 1)
+        Assert.assertEquals(listOf(newChatInfo.linearId,
+                newChatInfoA.linearId,
+                newChatInfoB.linearId,
+                replyChatInfo.linearId,
+                replyChatInfoA.linearId,
+                replyChatInfoB.linearId
+                ).toSet().size,
+                1)
 
-    }
+
+        // same chat in two nodes should have diff participants
+        val participantsA = replyChatInfoA.participants
+        val participantsB = replyChatInfoB.participants
+        Assert.assertEquals(participantsA.size,1)
+        Assert.assertEquals(participantsB.size,1)
+
+        val participantA = participantsA.single()
+        val participantB = participantsB.single()
+        Assert.assertFalse(participantA.nameOrNull().toString().equals(participantB.nameOrNull().toString()))    }
 }

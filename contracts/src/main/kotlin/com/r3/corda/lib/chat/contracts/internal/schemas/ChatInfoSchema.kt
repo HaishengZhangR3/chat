@@ -1,5 +1,6 @@
 package com.r3.corda.lib.chat.contracts.internal.schemas
 
+import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
@@ -43,6 +44,11 @@ data class PersistentChatInfo(
         @ElementCollection
         @Column(name = "chatToList", unique = false, nullable = false)
         @CollectionTable(name = "chat_tos", joinColumns = [(JoinColumn(name = "output_index", referencedColumnName = "output_index")), (JoinColumn(name = "transaction_id", referencedColumnName = "transaction_id"))])
-        val chatToList: List<Party>
+        val chatToList: List<Party>,
+
+        @ElementCollection
+        @Column(name = "participants", unique = false, nullable = false)
+        @CollectionTable(name = "chat_participants", joinColumns = [(JoinColumn(name = "output_index", referencedColumnName = "output_index")), (JoinColumn(name = "transaction_id", referencedColumnName = "transaction_id"))])
+        val participants: List<AbstractParty>
 
 ) : PersistentState()

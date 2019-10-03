@@ -52,25 +52,19 @@ class SyncUpChatHistoryFlowTests {
                 "subject",
                 "content",
                 null,
-                nodeA.info.legalIdentities.single(),
                 listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
         val newChatInfo = newChatFlow.getOrThrow()
 
-        val newChatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfo == newChatInfoInVaultA)
-
-        // check whether the created one in node B is same as that in the DB of host node A
-        val newChatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfoInVaultA.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
-
+        val newChatInfoA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+        val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
 
         // 2. sync up to C
         val syncUpChatHistoryFlow = nodeB.startFlow(
                 SyncUpChatHistoryFlow(
                         listOf(nodeC.info.legalIdentities.single()),
-                        newChatInfoInVaultB.state.data.linearId
+                        newChatInfoB.linearId
                 )
         )
 
@@ -78,8 +72,17 @@ class SyncUpChatHistoryFlowTests {
         syncUpChatHistoryFlow.getOrThrow()
 
         // check whether the created one in node B is same as that in the DB of host node A
-        val newChatInfoInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfoInVaultC.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
+        val syncupChatInfoInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states
+        Assert.assertEquals(syncupChatInfoInVaultC.size, 1)
 
+        val newChatInfoC = syncupChatInfoInVaultC.single().state.data
+        Assert.assertTrue(newChatInfoC.linearId == newChatInfoB.linearId)
+
+        // participants check
+        val participantC = newChatInfoC.participants
+        val participantA = newChatInfoA.participants
+        Assert.assertEquals(participantC.size, 1)
+        Assert.assertEquals(participantA.size, 1)
+        Assert.assertFalse(participantA.single().toString().equals(participantC.single().toString()))
     }
 }

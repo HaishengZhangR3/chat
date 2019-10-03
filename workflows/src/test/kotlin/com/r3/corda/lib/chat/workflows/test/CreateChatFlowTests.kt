@@ -48,21 +48,28 @@ class CreateChatFlowTests {
                 "subject",
                 "content",
                 null,
-                nodeA.info.legalIdentities.single(),
                  listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-        val chatInfo = chatFlow.getOrThrow()
+        val txn = chatFlow.getOrThrow()
+        val chatInfo = txn.coreTransaction.outputStates.single() as ChatInfo
 
         val chatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-
-        //check whether the created one in node A is same as that in the DB of host node A
-        Assert.assertTrue(chatInfo == chatInfoInVaultA)
+        Assert.assertTrue(chatInfo == chatInfoInVaultA.state.data)
 
         //check whether the created one in node B is same as that in the DB of host node A
         val chatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-
         Assert.assertTrue(chatInfoInVaultA.state.data.linearId == chatInfoInVaultB.state.data.linearId)
+
+        // same chat in two nodes should have diff participants
+        val participantsA = chatInfoInVaultA.state.data.participants
+        val participantsB = chatInfoInVaultB.state.data.participants
+        Assert.assertEquals(participantsA.size,1)
+        Assert.assertEquals(participantsB.size,1)
+
+        val participantA = participantsA.single()
+        val participantB = participantsB.single()
+        Assert.assertFalse(participantA.nameOrNull().toString().equals(participantB.nameOrNull().toString()))
 
     }
 }

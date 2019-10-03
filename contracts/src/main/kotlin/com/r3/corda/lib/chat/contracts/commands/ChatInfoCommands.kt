@@ -6,6 +6,7 @@ interface ChatCommand : CommandData
 
 class Create : ChatCommand
 class Reply : ChatCommand
+class SyncUpHistory : ChatCommand
 
 class Close : ChatCommand
 class AgreeClose : ChatCommand

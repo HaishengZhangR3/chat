@@ -28,25 +28,26 @@ data class ChatInfo(
         val attachment: SecureHash? = null,
         val from: Party,
         val to: List<Party>,
-        override val participants: List<AbstractParty> = to + from
+        override val participants: List<AbstractParty>
 ) : LinearState, QueryableState {
 
 
     override fun generateMappedObject(schema: MappedSchema): PersistentState =
-        when (schema){
-            is ChatSchema ->
-                PersistentChatInfo(
-                    created = created,
-                    identifier = linearId.id,
-                    subject = subject,
-                    content = content,
-                    attachment = attachment?.toString(),
-                    chatFrom = from,
-                    chatToList = to
-                )
-            else ->
-                throw IllegalStateException("Cannot construct instance of ${this.javaClass} from Schema: $schema")
-        }
+            when (schema) {
+                is ChatSchema ->
+                    PersistentChatInfo(
+                            identifier = linearId.id,
+                            created = created,
+                            subject = subject,
+                            content = content,
+                            attachment = attachment?.toString(),
+                            chatFrom = from,
+                            chatToList = to,
+                            participants = participants
+                    )
+                else ->
+                    throw IllegalStateException("Cannot construct instance of ${this.javaClass} from Schema: $schema")
+            }
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatSchema)
 

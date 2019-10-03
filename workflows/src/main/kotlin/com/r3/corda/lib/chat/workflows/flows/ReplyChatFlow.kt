@@ -3,11 +3,10 @@ package com.r3.corda.lib.chat.workflows.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.Reply
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
-import net.corda.core.identity.Party
+import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 
@@ -19,44 +18,44 @@ import net.corda.core.utilities.unwrap
 @StartableByService
 @StartableByRPC
 class ReplyChatFlow(
-        val subject: String,
-        val content: String,
-        val attachment: SecureHash?,
-        val from: Party,
-        val to: List<Party>,
-        val linearId: UniqueIdentifier
-) : FlowLogic<StateAndRef<ChatInfo>>() {
+        private val content: String,
+        private val attachment: SecureHash?,
+        private val linearId: UniqueIdentifier
+) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
-    override fun call(): StateAndRef<ChatInfo> {
+    override fun call(): SignedTransaction {
 
-        // reply which chat thread? should get the head of the chat thread from storage based on the linearId
-        val inputChatInfo = ServiceUtils.getChatHead(serviceHub, linearId)
+        // reply to which chat thread? should get the head of the chat thread based on the linearId
+        val headMessageState = ServiceUtils.getChatHead(serviceHub, linearId)
+        val headMessage = headMessageState.state.data
+
+        val toList = (headMessage.to + headMessage.from - ourIdentity).distinct()
         val outputChatInfo = ChatInfo(
-                subject = subject,
+                linearId = linearId,
+                subject = headMessage.subject,
                 content = content,
                 attachment = attachment,
-                from = from,
-                to = to,
-                linearId = linearId
+                from = ourIdentity,
+                to = toList,
+                participants = listOf(ourIdentity)
         )
 
-        val txnBuilder = TransactionBuilder(notary = inputChatInfo.state.notary)
-                .addInputState(inputChatInfo)
+        val txnBuilder = TransactionBuilder(notary = headMessageState.state.notary)
+                // don't consume any input
                 .addOutputState(outputChatInfo)
-                .addCommand(Reply(), from.owningKey)
+                .addCommand(Reply(), ourIdentity.owningKey)
                 .also {
                     it.verify(serviceHub)
                 }
 
-        // send to "to" list.
-        to.map { initiateFlow(it).send(outputChatInfo) }
+        // reply message will send to "to + from - me" list.
+        toList.map { initiateFlow(it).send(outputChatInfo) }
 
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
-
-        return ServiceUtils.getChatHead(serviceHub, linearId)
+        return signedTxn
     }
 }
 
@@ -64,18 +63,16 @@ class ReplyChatFlow(
  * This is the flow which responds to reply chat.
  */
 @InitiatedBy(ReplyChatFlow::class)
-class ReplyChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
+class ReplyChatFlowResponder(private val flowSession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
-    override fun call() {
+    override fun call(): SignedTransaction {
 
         // "receive" a message, then save to vault.
-        // even when the node is off for a long time, still the chat will not be blocked by me
-        val chatInfo = flowSession.receive<ChatInfo>().unwrap{ it }
-        val input = ServiceUtils.getChatHead(serviceHub, chatInfo.linearId)
+        val chatInfo = flowSession.receive<ChatInfo>().unwrap { it }
+        val headMessage = ServiceUtils.getChatHead(serviceHub, chatInfo.linearId)
 
-        val txnBuilder = TransactionBuilder(notary = input.state.notary)
-                .addInputState(input)
-                .addOutputState(chatInfo)
+        val txnBuilder = TransactionBuilder(notary = headMessage.state.notary)
+                .addOutputState(chatInfo.copy(participants = listOf(ourIdentity)))
                 .addCommand(Reply(), listOf(ourIdentity.owningKey))
                 .also {
                     it.verify(serviceHub)
@@ -83,5 +80,6 @@ class ReplyChatFlowResponder(val flowSession: FlowSession): FlowLogic<Unit>() {
 
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
+        return signedTxn
     }
 }

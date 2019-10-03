@@ -8,6 +8,7 @@ import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
+import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 import java.util.*
@@ -20,28 +21,29 @@ import java.util.*
 @StartableByService
 @StartableByRPC
 class CreateChatFlow(
+        // @todo: who decides notary? pass in or Chat app?
         private val subject: String,
         private val content: String,
         private val attachment: SecureHash?,
-        private val from: Party,
         private val to: List<Party>
-) : FlowLogic<StateAndRef<ChatInfo>>() {
+) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
-    override fun call(): StateAndRef<ChatInfo> {
+    override fun call(): SignedTransaction {
         val notary = ServiceUtils.notary(serviceHub)
         val newChatInfo = ChatInfo(
+                linearId = UniqueIdentifier.fromString(UUID.randomUUID().toString()),
                 subject = subject,
                 content = content,
                 attachment = attachment,
-                from = from,
+                from = ourIdentity,
                 to = to,
-                linearId = UniqueIdentifier.fromString(UUID.randomUUID().toString())
+                participants = listOf(ourIdentity)
         )
 
         val txnBuilder = TransactionBuilder(notary = notary)
                 .addOutputState(newChatInfo)
-                .addCommand(Create(), from.owningKey)
+                .addCommand(Create(), ourIdentity.owningKey)
                 .also { it.verify(serviceHub) }
 
         // send to "to" list.
@@ -52,8 +54,7 @@ class CreateChatFlow(
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
-
-        return ServiceUtils.getChatHead(serviceHub, newChatInfo.linearId)
+        return signedTxn
     }
 }
 
@@ -61,9 +62,9 @@ class CreateChatFlow(
  * This is the flow which responds to create chat.
  */
 @InitiatedBy(CreateChatFlow::class)
-class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<Unit>() {
+class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<SignedTransaction>() {
     @Suspendable
-    override fun call() {
+    override fun call(): SignedTransaction {
 
         val notary = ServiceUtils.notary(serviceHub)
 
@@ -76,5 +77,6 @@ class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<U
 
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
+        return signedTxn
     }
 }

@@ -18,28 +18,25 @@ class ChatInfoContract : Contract {
         // per command check
         when (command.value) {
             is Create -> {
-                require(tx.inputStates.size == 0) { "There should be no input chat state." }
+                require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }
                 val requiredSigners = command.signers
                 require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
 
                 // out.linearId must != null
                 // to list should not be empty
+                // from should not be in to list
                 // to list should not have duplicate
-
             }
             is Reply -> {
-                require(tx.inputStates.size == 1) { "There should only be one input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }
                 val requiredSigners = command.signers
                 require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
-
-                // toAdd list should not be empty
-
-                // in.linearId must == out.linearId
-                val input = tx.inputStates.single() as ChatInfo
-                val output = tx.outputStates.single() as ChatInfo
-                require(input.linearId == output.linearId) { "Both input and output should have the same ID so that they are in one chat thread." }
+            }
+            is SyncUpHistory -> {
+                require(tx.outputStates.size == 1) { "There should only be one output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
             }
             is Close -> {
                 require(tx.inputStates.size == 1) { "There should only be one input chat state." }
