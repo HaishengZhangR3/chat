@@ -37,13 +37,6 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
             }
-            is Close -> {
-                require(tx.inputStates.size >= 1) { "There should be more than one input chat state." }
-                require(tx.outputStates.size == 0) { "There should be no output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
-
-            }
             is ProposeClose -> {
                 require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
                 require(tx.outputStates.size == 1) { "There should be no output chat state." }
@@ -64,6 +57,13 @@ class ChatInfoContract : Contract {
                 require(tx.outputStates.isEmpty()) { "There should be no output chat state." }
                 val requiredSigners = command.signers
                 require(requiredSigners.isNotEmpty()) { "There should be more than one required signer for a chat: from and to list." }
+
+            }
+            is Close -> {
+                require(tx.inputStates.size >= 1) { "There should be more than one input chat state." }
+                require(tx.outputStates.size == 0) { "There should be no output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
             }
 
@@ -93,6 +93,13 @@ class ChatInfoContract : Contract {
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }
                 val requiredSigners = command.signers
                 require(requiredSigners.isNotEmpty()) { "There should more one required signer for a chat: from and to list." }
+            }
+            is UpdateParticipants -> {
+                require(tx.inputStates.isNotEmpty()) { "There should be more than one input chat state." }
+                require(tx.outputStates.isEmpty()) { "There should be no output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.isNotEmpty()) { "There should be more than one required signer for a chat: from and to list." }
+
             }
             else -> {
                 throw NotSupportedException()
