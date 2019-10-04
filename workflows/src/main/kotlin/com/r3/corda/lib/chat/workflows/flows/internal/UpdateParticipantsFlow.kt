@@ -2,7 +2,6 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.UpdateParticipants
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
 import com.r3.corda.lib.chat.workflows.flows.ShareChatHistoryFlow
@@ -37,17 +36,16 @@ class UpdateParticipantsFlow(
 
         // steps:
         // 1. consume all propose and agree states for all parties who need sign, need all sign
-        // 2. share history messages to toAdd (subflow), no need sign
-        // 4. notice with a new txn output = chatInfo whose toList == old toList + toAdd - toRemove, need all sign
-
-        // 1. consume all propose and agree states
         closeUpdateStates(allUpdateStateRef)
 
-        // 2. share history messages
-        subFlow(ShareChatHistoryFlow(proposeData.toAdd, proposeData.linearId))
+        // 2. counter party close the chat with consuming all of the history chats
+        subFlow(ShutDownChatFlow(chatId = chatId, toList = proposeData.toRemove))
 
-        // 4. notice other parties about the change
-        return updateParticipants(allUpdateStateRef)
+        // 3. share history messages to toAdd (subflow), no need sign
+        subFlow(ShareChatHistoryFlow(chatId = proposeData.linearId, to = proposeData.toAdd))
+
+        // 4. notice with a new txn output = chatInfo whose toList == old toList + toAdd - toRemove, need all sign
+        return updateParticipants(proposeData)
     }
 
     @Suspendable
@@ -69,33 +67,15 @@ class UpdateParticipantsFlow(
     }
 
     @Suspendable
-    private fun updateParticipants(allStates: List<StateAndRef<UpdateParticipantsState>>): SignedTransaction {
+    private fun updateParticipants(proposeData: UpdateParticipantsState): SignedTransaction {
         val headChat = ServiceUtils.getChatHead(serviceHub, chatId).state.data
+        val toList = (headChat.to + headChat.from + proposeData.toAdd - proposeData.toRemove - ourIdentity)
 
-        val proposeState = allStates.first{it.state.data.status == UpdateParticipantsStatus.PROPOSED}
-        val proposeData = proposeState.state.data
-
-        val allParties = (headChat.to + headChat.from + proposeData.toAdd - proposeData.toRemove)
-        val counterParties = allParties - ourIdentity
-
-        val outputChatInfo = ChatInfo(
-                linearId = chatId,
+        return subFlow(SendMessageFlow(
+                to = toList,
                 subject = headChat.subject,
-                from = ourIdentity,
-                to = allParties,
-                participants = listOf(ourIdentity)
-        )
-
-
-        val txnBuilder = TransactionBuilder(notary = proposeState.state.notary)
-                .addOutputState(outputChatInfo)
-                .addCommand(UpdateParticipants(), allParties.map { it.owningKey })
-                .also { it.verify(serviceHub) }
-
-        val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
-        val counterPartySession = counterParties.map { initiateFlow(it) }
-        val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySession))
-        return subFlow(FinalityFlow(collectSignTxn, counterPartySession))
+                chatId = chatId
+        ))
     }
 
     private fun areAllUpdateProposeAgreed(allStates: List<StateAndRef<UpdateParticipantsState>>) {
@@ -116,16 +96,11 @@ class UpdateParticipantsFlow(
 
 @InitiatedBy(UpdateParticipantsFlow::class)
 class UpdateParticipantsFlowResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
-
     @Suspendable
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
-
-                // @todo: the party in toRemove should close the chat here
-//                CloseChatUtils.closeChat(serviceHub, , listOf(ourIdentity.owningKey))
-
             }
         }
         val signTxn = subFlow(transactionSigner)

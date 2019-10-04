@@ -63,8 +63,8 @@ class ShareChatHistoryFlowTests {
         // 2. share to C
         val shareChatHistoryFlow = nodeB.startFlow(
                 ShareChatHistoryFlow(
-                        listOf(nodeC.info.legalIdentities.single()),
-                        newChatInfoB.linearId
+                        to = listOf(nodeC.info.legalIdentities.single()),
+                        chatId = newChatInfoB.linearId
                 )
         )
 

@@ -60,7 +60,11 @@ class UpdateParticipantsFlowTests {
         network.runNetwork()
         newChatFlow.getOrThrow()
 
+        val chatInA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
         val chatInB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+
+        Assert.assertEquals(chatInA.content, "content")
+        Assert.assertEquals(chatInB.content, "content")
 
         // 2. add new participants
         val addParticipantsFlow = nodeB.startFlow(

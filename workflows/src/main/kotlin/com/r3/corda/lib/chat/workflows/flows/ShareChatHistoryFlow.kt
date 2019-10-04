@@ -14,8 +14,8 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByService
 class ShareChatHistoryFlow(
-        private val to: List<Party>,
-        private val chatId: UniqueIdentifier
+        private val chatId: UniqueIdentifier,
+        private val to: List<Party>
 ) : FlowLogic<Unit>() {
     @Suspendable
     override fun call(): Unit {
