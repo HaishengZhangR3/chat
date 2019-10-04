@@ -109,8 +109,6 @@ class CloseChatFlowTests {
 
     }
 
-
-
     @Test
     fun `should be possible to close a chat when all agreed`() {
 

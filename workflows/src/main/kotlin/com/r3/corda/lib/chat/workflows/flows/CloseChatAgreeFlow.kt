@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.AgreeClose
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.contracts.states.CloseChatStatus
-import net.corda.core.contracts.Requirements.using
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
@@ -21,10 +20,12 @@ class CloseChatAgreeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val headMessageStateRef = ServiceUtils.getChatHead(serviceHub, linearId)
-        val headMessage = headMessageStateRef.state.data
+        val allCloseStateRef = CloseChatUtils.getAllCloseStates(serviceHub, linearId)
+        val proposedCloseStateRef = CloseChatUtils.getCloseProposeState(allCloseStateRef)
+        val proposedCloseState = proposedCloseStateRef.state.data
+        requireThat { "Don't need to agree on the proposal you raised." using (proposedCloseState.from != ourIdentity) }
 
-        val allParties = (headMessage.to + headMessage.from + ourIdentity).distinct()
+        val allParties = (proposedCloseState.to + proposedCloseState.from).distinct()
         val counterParties = allParties - ourIdentity
 
         val proposeState = CloseChatState(
@@ -34,13 +35,13 @@ class CloseChatAgreeFlow(
                 status = CloseChatStatus.AGREED,
                 participants = allParties
         )
-        val txnBuilder = TransactionBuilder(headMessageStateRef.state.notary)
+        val txnBuilder = TransactionBuilder(proposedCloseStateRef.state.notary)
                 // no input
                 .addOutputState(proposeState)
                 .addCommand(AgreeClose(), allParties.map { it.owningKey })
-        txnBuilder.verify(serviceHub)
+                .also { it.verify(serviceHub) }
 
-        // need every parties to sign and close it
+        // need counter party to sign and close it
         val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
         val counterPartySessions = counterParties.map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
@@ -53,7 +54,6 @@ class CloseChatAgreeFlow(
 class CloseChatFlowAgreeResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
-
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction): Unit {
             }

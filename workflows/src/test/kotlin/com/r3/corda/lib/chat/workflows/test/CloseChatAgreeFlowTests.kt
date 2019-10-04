@@ -5,6 +5,7 @@ import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.workflows.flows.CloseChatAgreeFlow
 import com.r3.corda.lib.chat.workflows.flows.CloseChatProposeFlow
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -49,7 +50,6 @@ class CloseChatAgreeFlowTests {
     @Test
     fun `should be possible to close a chat`() {
 
-
         // 1 create one
         val newChatFlow = nodeA.startFlow(CreateChatFlow(
                 "subject",
@@ -61,6 +61,18 @@ class CloseChatAgreeFlowTests {
         newChatFlow.getOrThrow()
 
         val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+
+        // 2 reply the chat
+        val replyFlow = nodeB.startFlow(
+                ReplyChatFlow(
+                        "content",
+                        null,
+                        newChatInfoB.linearId
+                )
+        )
+
+        network.runNetwork()
+        replyFlow.getOrThrow()
 
         // 3. propose close chat
         val proposeClose = nodeA.startFlow(

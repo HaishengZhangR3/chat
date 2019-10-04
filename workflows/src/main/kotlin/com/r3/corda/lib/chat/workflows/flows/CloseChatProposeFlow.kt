@@ -18,6 +18,7 @@ class CloseChatProposeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
+        // @todo: if there has been a proposal on the chat, then no need to propose again
         val headMessageStateRef = ServiceUtils.getChatHead(serviceHub, linearId)
         val headMessage = headMessageStateRef.state.data
 

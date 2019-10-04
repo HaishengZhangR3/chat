@@ -20,7 +20,7 @@ class CloseChatRejectFlow(
         val allCloseProposeStateRef = ServiceUtils.getActiveCloseChatStates(serviceHub, linearId)
         val headState = allCloseProposeStateRef.first()
 
-        val allParties = (headState.state.data.to + headState.state.data.from + ourIdentity).distinct()
+        val allParties = (headState.state.data.to + headState.state.data.from).distinct()
         val counterParties = allParties - ourIdentity
 
         val txnBuilder = TransactionBuilder(headState.state.notary)
