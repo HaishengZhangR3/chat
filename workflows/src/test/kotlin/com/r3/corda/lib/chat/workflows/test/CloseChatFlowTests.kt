@@ -62,9 +62,9 @@ class CloseChatFlowTests {
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(
                 ReplyChatFlow(
-                        "content",
-                        null,
-                        newChatInfoB.linearId
+                        content = "content",
+                        attachment = null,
+                        chatId = newChatInfoB.linearId
                 )
         )
 
@@ -127,9 +127,9 @@ class CloseChatFlowTests {
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(
                 ReplyChatFlow(
-                        "content",
-                        null,
-                        newChatInfoB.linearId
+                        content = "content",
+                        attachment = null,
+                        chatId = newChatInfoB.linearId
                 )
         )
 

@@ -63,9 +63,9 @@ class ShutDownChatFlowTests {
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(
                 ReplyChatFlow(
-                        "content",
-                        null,
-                        chatInB.linearId
+                        content ="content",
+                        attachment = null,
+                        chatId = chatInB.linearId
                 )
         )
 

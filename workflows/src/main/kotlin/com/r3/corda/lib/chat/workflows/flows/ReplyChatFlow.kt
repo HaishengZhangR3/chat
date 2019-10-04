@@ -12,9 +12,9 @@ import net.corda.core.transactions.SignedTransaction
 @StartableByService
 @StartableByRPC
 class ReplyChatFlow(
+        private val chatId: UniqueIdentifier,
         private val content: String,
-        private val attachment: SecureHash?,
-        private val chatId: UniqueIdentifier
+        private val attachment: SecureHash?
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
@@ -33,15 +33,5 @@ class ReplyChatFlow(
                 attachment = attachment,
                 chatId = chatId
         ))
-    }
-}
-
-/**
- * This is the flow which responds to reply chat.
- */
-@InitiatedBy(ReplyChatFlow::class)
-class ReplyChatFlowResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call(): Unit {
     }
 }

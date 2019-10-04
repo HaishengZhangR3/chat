@@ -15,10 +15,10 @@ import net.corda.core.transactions.TransactionBuilder
 @StartableByService
 @StartableByRPC
 class UpdateParticipantsProposeFlow(
+        private val chatId: UniqueIdentifier,
         private val toAdd: List<Party> = emptyList(),
         private val toRemove: List<Party> = emptyList(),
-        private val includingHistoryChat: Boolean,
-        private val chatId: UniqueIdentifier
+        private val includingHistoryChat: Boolean = false
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
