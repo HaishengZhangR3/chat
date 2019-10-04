@@ -21,19 +21,19 @@ import net.corda.core.utilities.unwrap
 class ReplyChatFlow(
         private val content: String,
         private val attachment: SecureHash?,
-        private val linearId: UniqueIdentifier
+        private val chatId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
 
         // reply to which chat thread? should get the head of the chat thread based on the linearId
-        val headMessageState = ServiceUtils.getChatHead(serviceHub, linearId)
+        val headMessageState = ServiceUtils.getChatHead(serviceHub, chatId)
         val headMessage = headMessageState.state.data
 
         val toList = (headMessage.to + headMessage.from - ourIdentity).distinct()
         val outputChatInfo = ChatInfo(
-                linearId = linearId,
+                linearId = chatId,
                 subject = headMessage.subject,
                 content = content,
                 attachment = attachment,

@@ -14,13 +14,13 @@ import net.corda.core.transactions.TransactionBuilder
 @StartableByService
 @StartableByRPC
 class CloseChatAgreeFlow(
-        private val linearId: UniqueIdentifier
+        private val chatId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val allCloseStateRef = CloseChatUtils.getAllCloseStates(serviceHub, linearId)
+        val allCloseStateRef = CloseChatUtils.getAllCloseStates(serviceHub, chatId)
         val proposedCloseStateRef = CloseChatUtils.getCloseProposeState(allCloseStateRef)
         val proposedCloseState = proposedCloseStateRef.state.data
         requireThat { "Don't need to agree on the proposal you raised." using (proposedCloseState.from != ourIdentity) }
@@ -29,7 +29,7 @@ class CloseChatAgreeFlow(
         val counterParties = allParties - ourIdentity
 
         val proposeState = CloseChatState(
-                linearId = linearId,
+                linearId = chatId,
                 from = ourIdentity,
                 to = allParties,
                 status = CloseChatStatus.AGREED,

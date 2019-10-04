@@ -1,40 +1,35 @@
-package com.r3.corda.lib.chat.workflows.flows
+package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.ProposeClose
-import com.r3.corda.lib.chat.contracts.states.CloseChatState
+import com.r3.corda.lib.chat.contracts.commands.RejectUpdateParticipants
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
 import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
+import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class CloseChatProposeFlow(
+class UpdateParticipantsRejectFlow(
         private val chatId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
 
-        // @todo: if there is a proposal on the chat, then no need to propose again
-        val headMessageStateRef = ServiceUtils.getChatHead(serviceHub, chatId)
-        val headMessage = headMessageStateRef.state.data
+        val allUpdateStateRef = ServiceUtils.getActiveParticipantsUpdateStates(serviceHub, chatId)
+        val proposeState = allUpdateStateRef.first{it.state.data.status == UpdateParticipantsStatus.PROPOSED}
+        val proposeData = proposeState.state.data
 
-        val allParties = (headMessage.to + headMessage.from + ourIdentity).distinct()
-        val counterParties = allParties - ourIdentity
+        val needSigns = proposeData.participants.map { it as Party }
+        val counterParties = needSigns - ourIdentity
 
-        val proposeState = CloseChatState(
-                linearId = chatId,
-                from = ourIdentity,
-                to = allParties,
-                participants = allParties
-        )
-        val txnBuilder = TransactionBuilder(headMessageStateRef.state.notary)
-                .addOutputState(proposeState)
-                .addCommand(ProposeClose(), allParties.map { it.owningKey })
+        val txnBuilder = TransactionBuilder(proposeState.state.notary)
+                .addCommand(RejectUpdateParticipants(), needSigns.map { it.owningKey })
+        allUpdateStateRef.map { txnBuilder.addInputState( it ) }
         txnBuilder.verify(serviceHub)
 
         // need every parties to sign and close it
@@ -46,11 +41,10 @@ class CloseChatProposeFlow(
     }
 }
 
-@InitiatedBy(CloseChatProposeFlow::class)
-class CloseChatProposeFlowResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
+@InitiatedBy(UpdateParticipantsRejectFlow::class)
+class UpdateParticipantsRejectFlowResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
-
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction): Unit {
             }
@@ -58,5 +52,4 @@ class CloseChatProposeFlowResponder(val otherSession: FlowSession): FlowLogic<Si
         val signTxn = subFlow(transactionSigner)
         return subFlow(ReceiveFinalityFlow(otherSession, signTxn.id))
     }
-
 }

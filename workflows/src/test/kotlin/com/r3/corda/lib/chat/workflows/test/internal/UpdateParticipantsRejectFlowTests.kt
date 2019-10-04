@@ -1,10 +1,10 @@
-package com.r3.corda.lib.chat.workflows.test
+package com.r3.corda.lib.chat.workflows.test.internal
 
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.contracts.states.CloseChatState
-import com.r3.corda.lib.chat.workflows.flows.CloseChatProposeFlow
-import com.r3.corda.lib.chat.workflows.flows.CloseChatRejectFlow
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsProposeFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsRejectFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -16,7 +16,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class CloseChatRejectFlowTests {
+class UpdateParticipantsRejectFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -59,30 +59,33 @@ class CloseChatRejectFlowTests {
         network.runNetwork()
         newChatFlow.getOrThrow()
 
-        val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+        val newChatB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
 
-        // 3. propose close chat
-        val proposeClose = nodeA.startFlow(
-                CloseChatProposeFlow(
-                        newChatInfoB.linearId
+        // 2. add new participants
+        val addParticipantsFlow = nodeB.startFlow(
+                UpdateParticipantsProposeFlow(
+                        toAdd = listOf(nodeC.info.legalIdentities.single()),
+                        includingHistoryChat = true,
+                        chatId = newChatB.linearId
                 )
         )
+
         network.runNetwork()
-        proposeClose.getOrThrow()
+        addParticipantsFlow.getOrThrow()
 
         // 4. propose close chat
-        val rejectClose = nodeB.startFlow(
-                CloseChatRejectFlow(
-                        newChatInfoB.linearId
+        val reject = nodeB.startFlow(
+                UpdateParticipantsRejectFlow(
+                        newChatB.linearId
                 )
         )
         network.runNetwork()
-        rejectClose.getOrThrow()
+        reject.getOrThrow()
 
         // there are 0 chat on ledge in each node
-        val closeChatsInVaultA = nodeA.services.vaultService.queryBy(CloseChatState::class.java).states
-        val closeChatsInVaultB = nodeB.services.vaultService.queryBy(CloseChatState::class.java).states
-        Assert.assertTrue(closeChatsInVaultA.size == 0)
-        Assert.assertTrue(closeChatsInVaultB.size == 0)
+        val updateA = nodeA.services.vaultService.queryBy(UpdateParticipantsState::class.java).states
+        val updateB = nodeB.services.vaultService.queryBy(UpdateParticipantsState::class.java).states
+        Assert.assertTrue(updateA.size == 0)
+        Assert.assertTrue(updateB.size == 0)
     }
 }

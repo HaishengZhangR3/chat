@@ -20,12 +20,12 @@ typealias ChatID = UniqueIdentifier
 data class ChatInfo(
         override val linearId: ChatID,
         override val created: Instant = Instant.now(),
+        override val participants: List<AbstractParty>,
         val subject: String = "",
         val content: String = "",
         val attachment: SecureHash? = null,
         val from: Party,
-        val to: List<Party>,
-        override val participants: List<AbstractParty>
+        val to: List<Party>
 ) : ChatBaseState, QueryableState {
 
     override fun generateMappedObject(schema: MappedSchema): PersistentState =

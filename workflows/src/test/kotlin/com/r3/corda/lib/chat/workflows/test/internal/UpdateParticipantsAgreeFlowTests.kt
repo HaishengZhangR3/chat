@@ -46,6 +46,22 @@ class UpdateParticipantsAgreeFlowTests {
         network.stopNodes()
     }
 
+
+    //private fun tt(){
+    // keep here for reference
+    // val txnToAgree = serviceHub.validatedTransactions.getTransaction(txnId) as SignedTransaction
+    // val stateAndRefToAgree = txnToAgree.toLedgerTransaction(serviceHub).outRefsOfType<UpdateParticipantsState>().single()
+
+    // val txns = nodeC.services.validatedTransactions.track().snapshot.filter {
+    //     it.coreTransaction.outputsOfType<ParticipantsUpdateState>().isNotEmpty()
+    // }
+    //
+    // Assert.assertTrue(txns.isNotEmpty())
+    // val txnId = txns.single().id
+
+    // val signedTxnId = signedTxn.coreTransaction.id
+    //}
+
     @Test
     fun `should be possible to propose to add participants to a chat`() {
 
@@ -57,65 +73,42 @@ class UpdateParticipantsAgreeFlowTests {
                 listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
-//        val newChatInfo = newChatFlow.getOrThrow()
+        newChatFlow.getOrThrow()
 
-        val newChatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-//        Assert.assertTrue(newChatInfo == newChatInfoInVaultA)
-
-        // check whether the created one in node B is same as that in the DB of host node A
-        val newChatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(newChatInfoInVaultA.state.data.linearId == newChatInfoInVaultB.state.data.linearId)
+        val chatInB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
 
         // 2. add new participants
         val addParticipantsFlow = nodeB.startFlow(
                 UpdateParticipantsProposeFlow(
                         toAdd = listOf(nodeC.info.legalIdentities.single()),
                         includingHistoryChat = true,
-                        linearId = newChatInfoInVaultB.state.data.linearId
+                        chatId = chatInB.linearId
                 )
         )
 
         network.runNetwork()
-        val signedTxn = addParticipantsFlow.getOrThrow()
-
-        // check whether the created one in node B is same as that in the DB of host node A
-        val proposalB = nodeB.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
-        val proposalC = nodeC.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
-        val proposalA = nodeA.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
-        Assert.assertTrue(proposalA.state == proposalB.state)
-        Assert.assertTrue(proposalC.state == proposalB.state)
-
+        addParticipantsFlow.getOrThrow()
 
         // 3. agree
-//        val txns = nodeC.services.validatedTransactions.track().snapshot.filter {
-//            it.coreTransaction.outputsOfType<ParticipantsUpdateState>().isNotEmpty()
-//        }
-//
-//        Assert.assertTrue(txns.isNotEmpty())
-//        val txnId = txns.single().id
-
-//        val signedTxnId = signedTxn.coreTransaction.id
-        val txnId = proposalC.ref.txhash
-        val chatId = proposalC.state.data.linearId
-        val agreeParticipantsFlowC = nodeC.startFlow(
+        val agreeParticipantsFlowA = nodeA.startFlow(
                 UpdateParticipantsAgreeFlow(
-                        txnId,
-                        chatId
+                        chatInB.linearId
                 )
         )
         network.runNetwork()
-        agreeParticipantsFlowC.getOrThrow()
+        agreeParticipantsFlowA.getOrThrow()
 
+        // chatinfo should not be consumed in B
         val chatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-//        Assert.assertTrue(newChatInfo == chatInfoInVaultA)
+        val chatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
+        Assert.assertTrue(chatInfoInVaultA.state.data.linearId == chatInfoInVaultB.state.data.linearId)
 
-        // todo: chatinfo should not be consumed in B
-//        val chatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-//        Assert.assertTrue(chatInfoInVaultA.state == chatInfoInVaultB.state)
-
-        val chatInfoInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states.single()
-        Assert.assertTrue(chatInfoInVaultC.state.data.linearId == chatInfoInVaultA.state.data.linearId)
-
+        // the agree result
+        val updateParticipantsA = nodeA.services.vaultService.queryBy(UpdateParticipantsState::class.java).states
+        val updateParticipantsB = nodeB.services.vaultService.queryBy(UpdateParticipantsState::class.java).states
+        Assert.assertEquals(updateParticipantsA.size, 2)
+        Assert.assertEquals(updateParticipantsB.size, 2)
 
     }
+
 }

@@ -17,12 +17,12 @@ sealed class CloseChatStatus {
 
 @BelongsToContract(ChatInfoContract::class)
 data class CloseChatState(
+        override val linearId: UniqueIdentifier,
         override val created: Instant = Instant.now(),
+        override val participants: List<AbstractParty>,
         val from: Party,
         val to: List<Party>,
-        val status: CloseChatStatus = CloseChatStatus.PROPOSED,
-        override val linearId: UniqueIdentifier,
-        override val participants: List<AbstractParty>
+        val status: CloseChatStatus = CloseChatStatus.PROPOSED
 ) : ChatBaseState {
     override fun toString(): String {
         return "CloseChatState(created=$created, from=$from, linearId=$linearId, participants=$participants)"

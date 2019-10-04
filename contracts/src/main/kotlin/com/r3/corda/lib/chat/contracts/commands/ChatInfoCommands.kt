@@ -14,5 +14,6 @@ class AgreeClose : ChatCommand
 class RejectClose : ChatCommand
 
 class UpdateParticipants : ChatCommand
+class ProposeUpdateParticipants : ChatCommand
 class AgreeUpdateParticipants : ChatCommand
 class RejectUpdateParticipants : ChatCommand

@@ -67,7 +67,7 @@ class ChatInfoContract : Contract {
 
             }
 
-            is UpdateParticipants -> {
+            is ProposeUpdateParticipants -> {
                 require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }
                 val requiredSigners = command.signers
@@ -82,13 +82,17 @@ class ChatInfoContract : Contract {
                 require(outputState.toAdd.intersect(outputState.toRemove).isEmpty()) { "ToAdd should not overlap with ToRemove"}
 
             }
-            is AgreeUpdateParticipants -> {
-//                require(tx.inputStates.size == 1) { "There should only be one input chat state." }
+            is RejectUpdateParticipants -> {
+                require(tx.inputStates.isNotEmpty()) { "There should be more input chat state." }
+                require(tx.outputStates.isEmpty()) { "There should be no output chat state." }
                 val requiredSigners = command.signers
-//                require(requiredSigners.size == 2) { "There should more one required signer for a chat: from and to list." }
-
-                // same check with AddParticipants for the state
-
+                require(requiredSigners.isNotEmpty()) { "There should more one required signer for a chat: from and to list." }
+            }
+            is AgreeUpdateParticipants -> {
+                require(tx.inputStates.isEmpty()) { "There should only be one input chat state." }
+                require(tx.outputStates.size == 1) { "There should only be one output chat state." }
+                val requiredSigners = command.signers
+                require(requiredSigners.isNotEmpty()) { "There should more one required signer for a chat: from and to list." }
             }
             else -> {
                 throw NotSupportedException()

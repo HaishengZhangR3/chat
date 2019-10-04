@@ -2,7 +2,6 @@ package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.RejectClose
-import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
@@ -12,14 +11,14 @@ import net.corda.core.transactions.TransactionBuilder
 @StartableByService
 @StartableByRPC
 class CloseChatRejectFlow(
-        private val linearId: UniqueIdentifier
+        private val chatId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val allCloseProposeStateRef = ServiceUtils.getActiveCloseChatStates(serviceHub, linearId)
-        val headState = allCloseProposeStateRef.first()
+        val allCloseProposeStateRef = CloseChatUtils.getAllCloseStates(serviceHub, chatId)
+        val headState = CloseChatUtils.getCloseProposeState(allCloseProposeStateRef)
 
         val allParties = (headState.state.data.to + headState.state.data.from).distinct()
         val counterParties = allParties - ourIdentity

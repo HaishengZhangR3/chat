@@ -19,7 +19,7 @@ import java.security.PublicKey
 @StartableByService
 @StartableByRPC
 class CloseChatFlow(
-        private val linearId: UniqueIdentifier,
+        private val chatId: UniqueIdentifier,
         private val force: Boolean = false
 ) : FlowLogic<SignedTransaction>() {
 
@@ -27,7 +27,7 @@ class CloseChatFlow(
     override fun call(): SignedTransaction {
 
         // ask all parties to close the chats
-        val allCloseStateRef = CloseChatUtils.getAllCloseStates(serviceHub, linearId)
+        val allCloseStateRef = CloseChatUtils.getAllCloseStates(serviceHub, chatId)
         val proposedCloseStateRef = CloseChatUtils.getCloseProposeState(allCloseStateRef)
         val proposedCloseState = proposedCloseStateRef.state.data
 
@@ -51,7 +51,7 @@ class CloseChatFlow(
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
 
         // 2). consume all of the chat messages
-        CloseChatUtils.closeChat(serviceHub, linearId, listOf(ourIdentity.owningKey))
+        CloseChatUtils.closeChat(serviceHub, chatId, listOf(ourIdentity.owningKey))
 
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }

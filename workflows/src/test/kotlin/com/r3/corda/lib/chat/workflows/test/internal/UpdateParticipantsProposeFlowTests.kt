@@ -65,7 +65,7 @@ class UpdateParticipantsProposeFlowTests {
                 UpdateParticipantsProposeFlow(
                         toAdd = listOf(nodeC.info.legalIdentities.single()),
                         includingHistoryChat =  true,
-                        linearId = newChatInfoInVaultB.state.data.linearId
+                        chatId = newChatInfoInVaultB.state.data.linearId
                 )
         )
 
@@ -75,9 +75,7 @@ class UpdateParticipantsProposeFlowTests {
         // check whether the created one in node B is same as that in the DB of host node A
         val proposalA = nodeA.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
         val proposalB = nodeB.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
-        val proposalC = nodeC.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
         Assert.assertTrue(proposalA.state == proposalB.state)
-        Assert.assertTrue(proposalC.state == proposalB.state)
 
 
     }
