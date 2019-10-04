@@ -1,10 +1,10 @@
-package com.r3.corda.lib.chat.workflows.flows
+package com.r3.corda.lib.chat.workflows.flows.utils
 
 import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatInfo
 import com.r3.corda.lib.chat.contracts.states.ChatBaseState
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
-import com.r3.corda.lib.chat.contracts.states.ParticipantsUpdateState
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.FlowException
@@ -75,10 +75,10 @@ object ServiceUtils {
 
     /* get ParticipantsUpdate head */
     fun getHeadParticipantsUpdateState(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
-            getHeadState<ParticipantsUpdateState>(serviceHub, chatId)
+            getHeadState<UpdateParticipantsState>(serviceHub, chatId)
 
     fun getActiveParticipantsUpdateStates(serviceHub: ServiceHub, chatId: UniqueIdentifier) =
-            getVaultStates<ParticipantsUpdateState>(serviceHub, chatId)
+            getVaultStates<UpdateParticipantsState>(serviceHub, chatId)
 
     /* get CloseChatState head */
     fun getHeadCloseChatState(serviceHub: ServiceHub, chatId: UniqueIdentifier) =

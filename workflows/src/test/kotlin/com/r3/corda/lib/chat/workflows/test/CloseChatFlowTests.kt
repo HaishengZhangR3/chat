@@ -186,7 +186,7 @@ class CloseChatFlowTests {
         val chatsInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states
         Assert.assertTrue(chatsInVaultA.isEmpty())
         Assert.assertTrue(chatsInVaultB.isEmpty())
-        Assert.assertTrue(chatsInVaultB.isEmpty())
+        Assert.assertTrue(chatsInVaultC.isEmpty())
 
     }
 

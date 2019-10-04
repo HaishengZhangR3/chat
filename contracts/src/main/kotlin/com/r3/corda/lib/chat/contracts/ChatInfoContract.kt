@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.contracts
 
 import com.r3.corda.lib.chat.contracts.commands.*
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.requireSingleCommand
 import net.corda.core.transactions.LedgerTransaction
@@ -12,8 +12,6 @@ class ChatInfoContract : Contract {
         val command = tx.commands.requireSingleCommand(ChatCommand::class.java)
 
         // common check
-        // from must be me
-
 
         // per command check
         when (command.value) {
@@ -23,7 +21,6 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
 
-                // out.linearId must != null
                 // to list should not be empty
                 // from should not be in to list
                 // to list should not have duplicate
@@ -34,7 +31,7 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
             }
-            is SyncUpHistory -> {
+            is ShareHistory -> {
                 require(tx.inputStates.isEmpty()) { "There should only be one input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }
                 val requiredSigners = command.signers
@@ -46,7 +43,6 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
-                // in.linearId must != null
             }
             is ProposeClose -> {
                 require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
@@ -54,7 +50,6 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
-                // in.linearId must != null
             }
             is AgreeClose -> {
                 require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
@@ -62,7 +57,6 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
-                // in.linearId must != null
             }
 
             is RejectClose -> {
@@ -71,43 +65,30 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.isNotEmpty()) { "There should be more than one required signer for a chat: from and to list." }
 
-                // in.linearId must != null
             }
 
-            is AddParticipants -> {
-                require(tx.inputStates.size == 1) { "There should only be one input chat state." }
+            is UpdateParticipants -> {
+                require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }
                 val requiredSigners = command.signers
-                require(requiredSigners.size >= 1) { "There should more one required signer for a chat: from and to list." }
+                require(requiredSigners.isNotEmpty()) { "There should more one required signer for a chat: from and to list." }
 
-                // action must be add
-                // toAdd list should not have duplicate
-                // toAdd list should not be empty
-                // in.linearId must != null
+                val outputState = tx.outputStates.single() as UpdateParticipantsState
+                require(outputState.toAdd.isNotEmpty() || outputState.toRemove.isNotEmpty()) { "One of ToAdd or ToRemove should not be empty"}
+                require(outputState.toAdd.distinct().size == outputState.toAdd.size) { "toAdd list should not have duplicate"}
 
-                // new added must not be in existing list
-                // max amount of to?
+                require(outputState.toRemove.distinct().size == outputState.toRemove.size) { "toAdd list should not have duplicate"}
+
+                require(outputState.toAdd.intersect(outputState.toRemove).isEmpty()) { "ToAdd should not overlap with ToRemove"}
+
             }
-            is AgreeAddParticipants -> {
+            is AgreeUpdateParticipants -> {
 //                require(tx.inputStates.size == 1) { "There should only be one input chat state." }
                 val requiredSigners = command.signers
 //                require(requiredSigners.size == 2) { "There should more one required signer for a chat: from and to list." }
 
                 // same check with AddParticipants for the state
 
-            }
-            is RemoveParticipants -> {
-                require(tx.inputStates.size == 1) { "There should only be one input chat state." }
-                require(tx.outputStates.size == 1) { "There should only be one output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.size > 1) { "There should more one required signer for a chat: from and to list." }
-
-                // toRemove list should not be empty
-                // remainning to list should not be empty
-                // in.linearId must != null
-
-                // toRemove must be in existing list
-                // toRemove list should not have duplicate
             }
             else -> {
                 throw NotSupportedException()

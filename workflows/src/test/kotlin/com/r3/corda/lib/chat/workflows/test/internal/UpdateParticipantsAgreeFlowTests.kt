@@ -1,10 +1,10 @@
-package com.r3.corda.lib.chat.workflows.test
+package com.r3.corda.lib.chat.workflows.test.internal
 
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.contracts.states.ParticipantsUpdateState
-import com.r3.corda.lib.chat.workflows.flows.AddParticipantsAgreeFlow
-import com.r3.corda.lib.chat.workflows.flows.AddParticipantsProposeFlow
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsAgreeFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsProposeFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -16,7 +16,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class AddParticipantsAgreeFlowTests {
+class UpdateParticipantsAgreeFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -68,10 +68,10 @@ class AddParticipantsAgreeFlowTests {
 
         // 2. add new participants
         val addParticipantsFlow = nodeB.startFlow(
-                AddParticipantsProposeFlow(
-                        listOf(nodeC.info.legalIdentities.single()),
-                        true,
-                        newChatInfoInVaultB.state.data.linearId
+                UpdateParticipantsProposeFlow(
+                        toAdd = listOf(nodeC.info.legalIdentities.single()),
+                        includingHistoryChat = true,
+                        linearId = newChatInfoInVaultB.state.data.linearId
                 )
         )
 
@@ -79,9 +79,9 @@ class AddParticipantsAgreeFlowTests {
         val signedTxn = addParticipantsFlow.getOrThrow()
 
         // check whether the created one in node B is same as that in the DB of host node A
-        val proposalB = nodeB.services.vaultService.queryBy(ParticipantsUpdateState::class.java).states.single()
-        val proposalC = nodeC.services.vaultService.queryBy(ParticipantsUpdateState::class.java).states.single()
-        val proposalA = nodeA.services.vaultService.queryBy(ParticipantsUpdateState::class.java).states.single()
+        val proposalB = nodeB.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
+        val proposalC = nodeC.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
+        val proposalA = nodeA.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
         Assert.assertTrue(proposalA.state == proposalB.state)
         Assert.assertTrue(proposalC.state == proposalB.state)
 
@@ -98,7 +98,7 @@ class AddParticipantsAgreeFlowTests {
         val txnId = proposalC.ref.txhash
         val chatId = proposalC.state.data.linearId
         val agreeParticipantsFlowC = nodeC.startFlow(
-                AddParticipantsAgreeFlow(
+                UpdateParticipantsAgreeFlow(
                         txnId,
                         chatId
                 )

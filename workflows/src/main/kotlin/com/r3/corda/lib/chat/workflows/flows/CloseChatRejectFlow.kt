@@ -2,6 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.RejectClose
+import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction

@@ -1,9 +1,10 @@
 package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.SyncUpHistory
+import com.r3.corda.lib.chat.contracts.commands.ShareHistory
 import com.r3.corda.lib.chat.contracts.states.ChatID
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
@@ -11,7 +12,7 @@ import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByService
-class SyncUpChatHistoryFlow(
+class ShareChatHistoryFlow(
         private val to: List<Party>,
         private val chatId: ChatID
 ) : FlowLogic<Unit>() {
@@ -22,8 +23,8 @@ class SyncUpChatHistoryFlow(
     }
 }
 
-@InitiatedBy(SyncUpChatHistoryFlow::class)
-class SyncUpChatHistoryFlowResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
+@InitiatedBy(ShareChatHistoryFlow::class)
+class ShareChatHistoryFlowResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call(): Unit {
         val historyMessages = otherSession.receive<List<ChatInfo>>().unwrap { it }
@@ -31,7 +32,7 @@ class SyncUpChatHistoryFlowResponder(private val otherSession: FlowSession) : Fl
             val txnBuilder = TransactionBuilder(notary = ServiceUtils.notary(serviceHub))
                     // no input
                     .addOutputState( it.copy(participants = listOf(ourIdentity)) )
-                    .addCommand(SyncUpHistory(), listOf(ourIdentity.owningKey))
+                    .addCommand(ShareHistory(), listOf(ourIdentity.owningKey))
             txnBuilder.verify(serviceHub)
             serviceHub.signInitialTransaction(txnBuilder)
         }

@@ -1,9 +1,11 @@
-package com.r3.corda.lib.chat.workflows.flows
+package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.AgreeAddParticipants
+import com.r3.corda.lib.chat.contracts.commands.AgreeUpdateParticipants
 import com.r3.corda.lib.chat.contracts.states.ChatID
-import com.r3.corda.lib.chat.contracts.states.ParticipantsUpdateState
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
+import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
+import com.r3.corda.lib.chat.workflows.flows.ShareChatHistoryFlow
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
@@ -12,7 +14,7 @@ import net.corda.core.transactions.TransactionBuilder
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class AddParticipantsAgreeFlow(
+class UpdateParticipantsAgreeFlow(
         private val txnId: SecureHash,
         private val chatId: ChatID
 ) : FlowLogic<SignedTransaction>() {
@@ -21,7 +23,7 @@ class AddParticipantsAgreeFlow(
     override fun call(): SignedTransaction {
 
         val txnToAgree = serviceHub.validatedTransactions.getTransaction(txnId) as SignedTransaction
-        val stateAndRefToAgree = txnToAgree.toLedgerTransaction(serviceHub).outRefsOfType<ParticipantsUpdateState>().single()
+        val stateAndRefToAgree = txnToAgree.toLedgerTransaction(serviceHub).outRefsOfType<UpdateParticipantsState>().single()
         val stateToAgree = stateAndRefToAgree.state.data
 
         val allParties = listOf(stateToAgree.from, ourIdentity)
@@ -30,8 +32,8 @@ class AddParticipantsAgreeFlow(
         val txnBuilder = TransactionBuilder(notary = txnToAgree.notary)
                 // @todo: input, output? think about it in detail......
 //                .addInputState(stateAndRefToAgree)
-                .addOutputState(stateToAgree.let { it.copy(allParticipants = it.toUpdate + it.from) })
-                .addCommand(AgreeAddParticipants(), allParties.map { it.owningKey })
+                .addOutputState(stateToAgree.let { it.copy(participants = it.toAdd + it.from) })
+                .addCommand(AgreeUpdateParticipants(), allParties.map { it.owningKey })
                 .also { it.verify(serviceHub) }
 
         // need every parties to sign and close it
@@ -42,8 +44,8 @@ class AddParticipantsAgreeFlow(
     }
 }
 
-@InitiatedBy(AddParticipantsAgreeFlow::class)
-class AddParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
+@InitiatedBy(UpdateParticipantsAgreeFlow::class)
+class UpdateParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
@@ -54,7 +56,7 @@ class AddParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowLogi
             override fun checkTransaction(stx: SignedTransaction): Unit {
 
 //                val stateToAgree = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.single() as ParticipantsUpdateState
-                val stateToAgree = stx.tx.outputStates.single() as ParticipantsUpdateState
+                val stateToAgree = stx.tx.outputStates.single() as UpdateParticipantsState
 
                 // the proposer side is responsible of sending history chat to new added participants,
                 when (stateToAgree.from) {
@@ -64,20 +66,20 @@ class AddParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowLogi
                         when (stateAndRef){
                             null -> "Already send out, no any further action needed."
                             else -> {
-                                subFlow(SyncUpChatHistoryFlow(stateToAgree.toUpdate, stateToAgree.linearId))
+                                subFlow(ShareChatHistoryFlow(stateToAgree.toAdd, stateToAgree.linearId))
 
                                 // @todo: consume local proposal and save to new txn
                                 // if we collect all parties signature, then we'll consume the proposal state,
                                 // together with all of the counterparts' agree states, and issue nothing
                                 val allAgreeStates = ServiceUtils.getActiveParticipantsUpdateStates(
                                         serviceHub, stateToAgree.linearId)
-                                if (allAgreeStates.size == stateAndRef.state.data.allParticipants.size) {
+                                if (allAgreeStates.size == stateAndRef.state.data.participants.size) {
 
                                     // consume everything, issue nothing
-                                    val allParties = stateAndRef.state.data.allParticipants
+                                    val allParties = stateAndRef.state.data.participants
                                     val txnBuilder = TransactionBuilder(notary = stateAndRef.state.notary)
                                             .withItems(allAgreeStates) // a lot to add a input
-                                            .addCommand(AgreeAddParticipants(), allParties.map { it.owningKey })
+                                            .addCommand(AgreeUpdateParticipants(), allParties.map { it.owningKey })
                                             .also { it.verify(serviceHub) }
 
 

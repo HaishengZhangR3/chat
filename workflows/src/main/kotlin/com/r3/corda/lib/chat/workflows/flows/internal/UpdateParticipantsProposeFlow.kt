@@ -1,10 +1,11 @@
-package com.r3.corda.lib.chat.workflows.flows
+package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.AddParticipants
-import com.r3.corda.lib.chat.contracts.states.ParticipantsAction
-import com.r3.corda.lib.chat.contracts.states.ParticipantsUpdateState
+import com.r3.corda.lib.chat.contracts.commands.UpdateParticipants
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
+import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
 import net.corda.core.contracts.UniqueIdentifier
+import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
@@ -13,8 +14,9 @@ import net.corda.core.transactions.TransactionBuilder
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class AddParticipantsProposeFlow(
-        private val toAdd: List<Party>,
+class UpdateParticipantsProposeFlow(
+        private val toAdd: List<Party> = emptyList(),
+        private val toRemove: List<Party> = emptyList(),
         private val includingHistoryChat: Boolean,
         private val linearId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
@@ -22,24 +24,28 @@ class AddParticipantsProposeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val inputChatInfo = ServiceUtils.getChatHead(serviceHub, linearId)
+        val headChatStateRef = ServiceUtils.getChatHead(serviceHub, linearId)
+        val headChat = headChatStateRef.state.data
 
-        val allParties = inputChatInfo.state.data.run { this.to + this.from + toAdd}
+        val allParties = (headChat.to + headChat.from + toAdd - toRemove).distinct()
+        requireThat { "Cannot remove every participants." using allParties.isNotEmpty()}
+        // @todo: new added must not be in existing list
+        // @todo: toRemove must be in existing list
+
         val toParties = allParties - ourIdentity
 
-        val participantsUpdate = ParticipantsUpdateState(
+        val participantsUpdate = UpdateParticipantsState(
+                linearId = linearId,
+                participants = allParties,
                 from = ourIdentity,
-                toUpdate = toAdd,
-                allParticipants = allParties,
-                action = ParticipantsAction.ADD,
-                includingHistoryChat = includingHistoryChat,
-                linearId = linearId
+                toAdd = toAdd,
+                toRemove = toRemove,
+                includingHistoryChat = includingHistoryChat
         )
 
-        val txnBuilder = TransactionBuilder(notary = inputChatInfo.state.notary)
-                .addInputState(inputChatInfo)
+        val txnBuilder = TransactionBuilder(notary = headChatStateRef.state.notary)
                 .addOutputState(participantsUpdate)
-                .addCommand(AddParticipants(), allParties.map { it.owningKey })
+                .addCommand(UpdateParticipants(), allParties.map { it.owningKey })
                 .also {
                     it.verify(serviceHub)
                 }
@@ -52,8 +58,8 @@ class AddParticipantsProposeFlow(
     }
 }
 
-@InitiatedBy(AddParticipantsProposeFlow::class)
-class AddParticipantsProposeFlowResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
+@InitiatedBy(UpdateParticipantsProposeFlow::class)
+class UpdateParticipantsProposeFlowResponder(val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
