@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.Create
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
+import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
@@ -26,10 +27,10 @@ class CreateChatFlow(
         private val content: String,
         private val attachment: SecureHash?,
         private val to: List<Party>
-) : FlowLogic<SignedTransaction>() {
+) : FlowLogic<StateAndRef<ChatInfo>>() {
 
     @Suspendable
-    override fun call(): SignedTransaction {
+    override fun call(): StateAndRef<ChatInfo> {
         val notary = ServiceUtils.notary(serviceHub)
         val toList = to.distinct()
         val newChatInfo = ChatInfo(
@@ -55,7 +56,7 @@ class CreateChatFlow(
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
-        return signedTxn
+        return signedTxn.coreTransaction.outRefsOfType<ChatInfo>().single()
     }
 }
 

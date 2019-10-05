@@ -52,7 +52,7 @@ class CreateChatFlowTests {
         ))
         network.runNetwork()
         val txn = chatFlow.getOrThrow()
-        val chatInfo = txn.coreTransaction.outputStates.single() as ChatInfo
+        val chatInfo = txn.state.data
 
         val chatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
         Assert.assertTrue(chatInfo == chatInfoInVaultA.state.data)

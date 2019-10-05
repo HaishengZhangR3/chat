@@ -54,7 +54,7 @@ class ReplyChatFlowTests {
         ))
         network.runNetwork()
         val txnNew = newChatFlow.getOrThrow()
-        val newChatInfo = txnNew.coreTransaction.outputStates.single() as ChatInfo
+        val newChatInfo = txnNew.state.data
 
         val newChatInfoA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
         val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data

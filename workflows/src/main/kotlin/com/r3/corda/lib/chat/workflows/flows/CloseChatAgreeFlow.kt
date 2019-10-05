@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.AgreeClose
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.contracts.states.CloseChatStatus
+import com.r3.corda.lib.chat.workflows.flows.utils.CloseChatUtils
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*

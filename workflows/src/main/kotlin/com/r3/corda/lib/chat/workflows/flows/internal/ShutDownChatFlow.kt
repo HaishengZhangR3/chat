@@ -2,7 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.states.ChatID
-import com.r3.corda.lib.chat.workflows.flows.CloseChatUtils
+import com.r3.corda.lib.chat.workflows.flows.utils.CloseChatUtils
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
