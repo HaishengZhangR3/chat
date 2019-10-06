@@ -22,7 +22,7 @@ class CloseChatFlow(
     override fun call(): SignedTransaction {
 
         // ask all parties to close the chats
-        val allCloseStateRef = CloseChatUtils.getAllCloseStates(serviceHub, chatId)
+        val allCloseStateRef = CloseChatUtils.getAllCloseStates(this, chatId)
         val proposedCloseStateRef = CloseChatUtils.getCloseProposeState(allCloseStateRef)
         val proposedCloseState = proposedCloseStateRef.state.data
 
@@ -46,7 +46,7 @@ class CloseChatFlow(
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
 
         // 2). consume all of the chat messages
-        CloseChatUtils.closeChat(serviceHub, chatId, listOf(ourIdentity.owningKey))
+        CloseChatUtils.closeChat(this, chatId, listOf(ourIdentity.owningKey))
 
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
@@ -64,7 +64,7 @@ class CloseChatFlowResponder(val otherSession: FlowSession) : FlowLogic<SignedTr
             override fun checkTransaction(stx: SignedTransaction): Unit {
 
                 val closeChatState = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as CloseChatState
-                CloseChatUtils.closeChat(serviceHub, closeChatState.linearId, listOf(ourIdentity.owningKey))
+                CloseChatUtils.closeChat(this, closeChatState.linearId, listOf(ourIdentity.owningKey))
             }
         }
         val signTxn = subFlow(transactionSigner)

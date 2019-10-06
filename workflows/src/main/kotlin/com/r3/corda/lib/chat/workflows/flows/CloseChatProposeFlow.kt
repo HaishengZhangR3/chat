@@ -3,7 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.ProposeClose
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
-import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
+import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
@@ -20,7 +20,7 @@ class CloseChatProposeFlow(
     override fun call(): SignedTransaction {
 
         // @todo: if there is a proposal on the chat, then no need to propose again
-        val headMessageStateRef = ServiceUtils.getChatHead(serviceHub, chatId)
+        val headMessageStateRef = chatVaultService.getHeadMessage(chatId)
         val headMessage = headMessageStateRef.state.data
 
         val allParties = (headMessage.to + headMessage.from + ourIdentity).distinct()

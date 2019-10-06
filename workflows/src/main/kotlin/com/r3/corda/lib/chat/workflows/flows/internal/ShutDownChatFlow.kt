@@ -27,6 +27,6 @@ class ShutDownChatFlowResponder(val otherSession: FlowSession): FlowLogic<Unit>(
     @Suspendable
     override fun call(): Unit {
         val chatId = otherSession.receive<ChatID>().unwrap { it }
-        CloseChatUtils.closeChat(serviceHub, chatId, listOf(ourIdentity.owningKey))
+        CloseChatUtils.closeChat(this, chatId, listOf(ourIdentity.owningKey))
     }
 }

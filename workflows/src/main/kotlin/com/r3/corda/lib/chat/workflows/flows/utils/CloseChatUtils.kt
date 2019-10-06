@@ -6,31 +6,31 @@ import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.contracts.states.CloseChatStatus
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.requireThat
-import net.corda.core.node.ServiceHub
+import net.corda.core.flows.FlowLogic
 import net.corda.core.transactions.TransactionBuilder
 import java.security.PublicKey
 
 object CloseChatUtils {
 
-    fun closeChat(serviceHub: ServiceHub, linearId: ChatID, participants: List<PublicKey>): Unit {
+    fun closeChat(flow: FlowLogic<*>, linearId: ChatID, participants: List<PublicKey>): Unit {
 
         // get and consume all messages in vault
-        val allMessagesStateRef = ServiceUtils.getActiveChats(serviceHub, linearId)
+        val allMessagesStateRef = flow.chatVaultService.getActiveMessages(linearId)
         requireThat { "There must be message in vault" using (allMessagesStateRef.isNotEmpty()) }
 
         val anyMessageStateRef = allMessagesStateRef.first()
         val txnBuilder = TransactionBuilder(notary = anyMessageStateRef.state.notary)
                 .addCommand(Close(), participants)
         allMessagesStateRef.forEach { txnBuilder.addInputState(it) }
-        txnBuilder.verify(serviceHub)
+        txnBuilder.verify(flow.serviceHub)
 
         // sign it
-        val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
-        serviceHub.recordTransactions(signedTxn)
+        val signedTxn = flow.serviceHub.signInitialTransaction(txnBuilder)
+        flow.serviceHub.recordTransactions(signedTxn)
     }
 
-    fun getAllCloseStates(serviceHub: ServiceHub, linearId: ChatID): List<StateAndRef<CloseChatState>> {
-        val allCloseStateRef = ServiceUtils.getActiveCloseChatStates(serviceHub, linearId)
+    fun getAllCloseStates(flow: FlowLogic<*>, linearId: ChatID): List<StateAndRef<CloseChatState>> {
+        val allCloseStateRef = flow.chatVaultService.getActiveCloseChatStates(linearId)
         requireThat { "No close chat proposal." using (allCloseStateRef.isNotEmpty()) }
         requireThat { "Should not be more close chat proposal." using
                 (allCloseStateRef.filter { it.state.data.status == CloseChatStatus.PROPOSED }.size == 1) }

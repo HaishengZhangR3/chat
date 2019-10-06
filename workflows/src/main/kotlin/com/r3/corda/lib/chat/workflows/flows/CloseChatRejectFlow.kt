@@ -18,7 +18,7 @@ class CloseChatRejectFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val allCloseProposeStateRef = CloseChatUtils.getAllCloseStates(serviceHub, chatId)
+        val allCloseProposeStateRef = CloseChatUtils.getAllCloseStates(this, chatId)
         val headState = CloseChatUtils.getCloseProposeState(allCloseProposeStateRef)
 
         val allParties = (headState.state.data.to + headState.state.data.from).distinct()

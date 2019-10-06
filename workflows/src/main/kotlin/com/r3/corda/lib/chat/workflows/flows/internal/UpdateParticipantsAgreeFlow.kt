@@ -3,7 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.AgreeUpdateParticipants
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
-import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
+import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -21,7 +21,7 @@ class UpdateParticipantsAgreeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val allUpdateStateRef = ServiceUtils.getActiveParticipantsUpdateStates(serviceHub, chatId)
+        val allUpdateStateRef = chatVaultService.getActiveParticipantsUpdateStates(chatId)
         val proposeState = allUpdateStateRef.first{it.state.data.status == UpdateParticipantsStatus.PROPOSED}
         val proposeData = proposeState.state.data
 

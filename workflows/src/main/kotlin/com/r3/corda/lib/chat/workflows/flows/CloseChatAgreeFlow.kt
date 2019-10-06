@@ -21,7 +21,7 @@ class CloseChatAgreeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val allCloseStateRef = CloseChatUtils.getAllCloseStates(serviceHub, chatId)
+        val allCloseStateRef = CloseChatUtils.getAllCloseStates(this, chatId)
         val proposedCloseStateRef = CloseChatUtils.getCloseProposeState(allCloseStateRef)
         val proposedCloseState = proposedCloseStateRef.state.data
         requireThat { "Don't need to agree on the proposal you raised." using (proposedCloseState.from != ourIdentity) }

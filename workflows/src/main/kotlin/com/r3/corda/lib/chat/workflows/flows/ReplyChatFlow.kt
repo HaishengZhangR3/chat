@@ -2,10 +2,13 @@ package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.workflows.flows.internal.SendMessageFlow
-import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
+import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
-import net.corda.core.flows.*
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.StartableByRPC
+import net.corda.core.flows.StartableByService
 import net.corda.core.transactions.SignedTransaction
 
 @InitiatingFlow
@@ -21,7 +24,7 @@ class ReplyChatFlow(
     override fun call(): SignedTransaction {
 
         // reply to which chat thread? should get the head of the chat thread based on the linearId
-        val headMessageState = ServiceUtils.getChatHead(serviceHub, chatId)
+        val headMessageState = chatVaultService.getHeadMessage(chatId)
         val headMessage = headMessageState.state.data
 
         val toList = (headMessage.to + headMessage.from - ourIdentity).distinct()

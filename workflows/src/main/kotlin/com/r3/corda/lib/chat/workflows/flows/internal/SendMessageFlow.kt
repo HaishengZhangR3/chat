@@ -3,7 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.Reply
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
+import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
@@ -30,7 +30,7 @@ class SendMessageFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val headMessageState = ServiceUtils.getChatHead(serviceHub, chatId)
+        val headMessageState = chatVaultService.getHeadMessage(chatId)
         val outputChatInfo = ChatInfo(
                 linearId = chatId,
                 subject = subject,
@@ -69,7 +69,7 @@ class SendMessageFlowResponder(private val flowSession: FlowSession) : FlowLogic
 
         // "receive" a message, then save to vault.
         val chatInfo = flowSession.receive<ChatInfo>().unwrap { it }
-        val headMessage = ServiceUtils.getChatHead(serviceHub, chatInfo.linearId)
+        val headMessage = chatVaultService.getHeadMessage(chatInfo.linearId)
 
         val txnBuilder = TransactionBuilder(notary = headMessage.state.notary)
                 .addOutputState(chatInfo.copy(participants = listOf(ourIdentity)))

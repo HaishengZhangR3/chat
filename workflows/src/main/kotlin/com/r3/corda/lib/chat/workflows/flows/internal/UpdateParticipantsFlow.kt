@@ -5,7 +5,7 @@ import com.r3.corda.lib.chat.contracts.commands.UpdateParticipants
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
 import com.r3.corda.lib.chat.workflows.flows.ShareChatHistoryFlow
-import com.r3.corda.lib.chat.workflows.flows.utils.ServiceUtils
+import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.contracts.requireThat
@@ -25,7 +25,7 @@ class UpdateParticipantsFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        val allUpdateStateRef = ServiceUtils.getActiveParticipantsUpdateStates(serviceHub, chatId)
+        val allUpdateStateRef = chatVaultService.getActiveParticipantsUpdateStates(chatId)
         val proposeState = allUpdateStateRef.first{it.state.data.status == UpdateParticipantsStatus.PROPOSED}
         val proposeData = proposeState.state.data
 
@@ -68,7 +68,7 @@ class UpdateParticipantsFlow(
 
     @Suspendable
     private fun updateParticipants(proposeData: UpdateParticipantsState): SignedTransaction {
-        val headChat = ServiceUtils.getChatHead(serviceHub, chatId).state.data
+        val headChat = chatVaultService.getHeadMessage(chatId).state.data
         val toList = (headChat.to + headChat.from + proposeData.toAdd - proposeData.toRemove - ourIdentity)
 
         return subFlow(SendMessageFlow(
