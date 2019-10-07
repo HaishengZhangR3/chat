@@ -76,7 +76,5 @@ class UpdateParticipantsProposeFlowTests {
         val proposalA = nodeA.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
         val proposalB = nodeB.services.vaultService.queryBy(UpdateParticipantsState::class.java).states.single()
         Assert.assertTrue(proposalA.state == proposalB.state)
-
-
     }
 }

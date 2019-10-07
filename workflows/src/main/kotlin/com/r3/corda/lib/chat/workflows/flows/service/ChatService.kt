@@ -2,16 +2,43 @@ package com.r3.corda.lib.chat.workflows.flows.service
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.workflows.flows.utils.*
+import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.TimeWindow
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.identity.Party
+import net.corda.core.serialization.CordaSerializable
 
 // @todo: support page: PageSpecification
+
+@CordaSerializable
+sealed class ChatStatus {
+    object ACTIVE: ChatStatus()
+    object CLOSE_PROPOSED : ChatStatus()
+    object CLOSE_AGREED : ChatStatus()
+    object CLOSED : ChatStatus()
+}
+
+data class ChatQuerySpec (
+        val chatId: UniqueIdentifier,
+        val initiator: Party,
+        val subject: String,
+        val timeWindow: TimeWindow
+)
+
+
+// get ID of all chats
+@InitiatingFlow
+@StartableByService
+@StartableByRPC
+class AllChatIDs : FlowLogic<List<UniqueIdentifier>>() {
+    @Suspendable
+    override fun call(): List<UniqueIdentifier> = chatVaultService.getAllChatIDs()
+}
 
 // get all chats (no filter)
 @InitiatingFlow
@@ -23,6 +50,15 @@ class AllChats : FlowLogic<List<StateAndRef<ChatInfo>>>() {
 }
 
 
+// get all chats with filter applied
+@InitiatingFlow
+@StartableByService
+@StartableByRPC
+class AllChatsBy(private val chatQuerySpec: ChatQuerySpec) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
+    @Suspendable
+    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getAllChatsBy(chatQuerySpec)
+}
+
 // get all messages for one single chat by ID
 @InitiatingFlow
 @StartableByService
@@ -30,6 +66,19 @@ class AllChats : FlowLogic<List<StateAndRef<ChatInfo>>>() {
 class ChatAllMessages(private val chatId: UniqueIdentifier) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
     @Suspendable
     override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getAllMessages(chatId)
+}
+
+// get all messages for a chat by:
+//  from,
+//  subject,
+//  time range (newer than [datetimme], older than [another datetime]),
+//  and/or combination of above
+@InitiatingFlow
+@StartableByService
+@StartableByRPC
+class ChatAllMessagesBy(private val chatId: UniqueIdentifier, private val chatQuerySpec: ChatQuerySpec) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
+    @Suspendable
+    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getChatMessagesBy(chatId, chatQuerySpec)
 }
 
 // get chat status: active, close proposed, closed
@@ -52,17 +101,4 @@ class ChatParticipants(private val chatId: UniqueIdentifier) : FlowLogic<List<Pa
         val headMessage = chatVaultService.getHeadMessage(chatId)
         return headMessage.state.data.let { it.to + it.from }.distinct()
     }
-}
-
-// get all messages for a chat by:
-//  from,
-//  subject,
-//  time range (newer than [datetimme], older than [another datetime]),
-//  and/or combination of above
-@InitiatingFlow
-@StartableByService
-@StartableByRPC
-class ChatMessages(private val chatId: UniqueIdentifier, private val chatQuerySpec: ChatQuerySpec) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
-    @Suspendable
-    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getChatMessages(chatId, chatQuerySpec)
 }

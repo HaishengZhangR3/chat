@@ -13,6 +13,8 @@ import net.corda.core.flows.StartableByService
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 
+//@todo: add test cases for participants adding
+
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
