@@ -27,5 +27,4 @@ data class CloseChatState(
     override fun toString(): String {
         return "CloseChatState(created=$created, from=$from, linearId=$linearId, participants=$participants)"
     }
-
 }

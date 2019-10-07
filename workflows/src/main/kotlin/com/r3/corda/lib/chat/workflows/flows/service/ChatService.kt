@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.contracts.TimeWindow
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
@@ -12,6 +11,7 @@ import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
+import java.time.Instant
 
 // @todo: support page: PageSpecification
 
@@ -23,19 +23,20 @@ sealed class ChatStatus {
     object CLOSED : ChatStatus()
 }
 
+@CordaSerializable
 data class ChatQuerySpec (
-        val chatId: UniqueIdentifier,
-        val initiator: Party,
-        val subject: String,
-        val timeWindow: TimeWindow
+        val chatId: UniqueIdentifier? = null,
+        val initiator: Party? = null,
+        val subject: String? = null,    // iLike subject, no wildcard
+        val createdTimeFrom: Instant? = null,
+        val createdTimeUntil: Instant? = null  // range = [fromTime, toTime)
 )
-
 
 // get ID of all chats
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class AllChatIDs : FlowLogic<List<UniqueIdentifier>>() {
+class AllChatIDs() : FlowLogic<List<UniqueIdentifier>>() {
     @Suspendable
     override fun call(): List<UniqueIdentifier> = chatVaultService.getAllChatIDs()
 }
@@ -76,9 +77,9 @@ class ChatAllMessages(private val chatId: UniqueIdentifier) : FlowLogic<List<Sta
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class ChatAllMessagesBy(private val chatId: UniqueIdentifier, private val chatQuerySpec: ChatQuerySpec) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
+class ChatAllMessagesBy(private val chatQuerySpec: ChatQuerySpec) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
     @Suspendable
-    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getChatMessagesBy(chatId, chatQuerySpec)
+    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getChatMessagesBy(chatQuerySpec)
 }
 
 // get chat status: active, close proposed, closed
