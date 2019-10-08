@@ -32,7 +32,7 @@ class CreateChatFlow(
     @Suspendable
     override fun call(): StateAndRef<ChatInfo> {
         val notary = chatVaultService.notary()
-        val toList = to.distinct()
+        val toList = (to - ourIdentity).distinct()
         val newChatInfo = ChatInfo(
                 linearId = UniqueIdentifier.fromString(UUID.randomUUID().toString()),
                 subject = subject,

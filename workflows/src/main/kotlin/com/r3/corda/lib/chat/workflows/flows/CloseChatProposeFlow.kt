@@ -19,7 +19,8 @@ class CloseChatProposeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        // @todo: if there is a proposal on the chat, then no need to propose again
+        // @todo: propose should fail if there is no chat in vault
+        // @todo: if there is a proposal on the chat from you (not others!!!), then no need to propose again
         val headMessageStateRef = chatVaultService.getHeadMessage(chatId)
         val headMessage = headMessageStateRef.state.data
 

@@ -11,6 +11,7 @@ class ChatInfoContract : Contract {
     override fun verify(tx: LedgerTransaction) {
         val command = tx.commands.requireSingleCommand(ChatCommand::class.java)
 
+        // @todo: carefully check every contract check
         // common check
 
         // per command check

@@ -23,10 +23,16 @@ class ReplyChatFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
+        // @todo: reply should fail if there is no chat in vault
+        // @todo: in fact, everything should fail if there is no chat in vault
+
         // reply to which chat thread? should get the head of the chat thread based on the linearId
         val headMessageState = chatVaultService.getHeadMessage(chatId)
         val headMessage = headMessageState.state.data
 
+        // @todo: check everywhere for:
+        //        - distinct of toList and participants
+        //        - "send to list" should ***not*** include "ourIdentity"
         val toList = (headMessage.to + headMessage.from - ourIdentity).distinct()
 
         return subFlow(SendMessageFlow(

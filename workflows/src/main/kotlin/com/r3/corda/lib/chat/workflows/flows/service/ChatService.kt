@@ -2,6 +2,8 @@ package com.r3.corda.lib.chat.workflows.flows.service
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.CloseChatState
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -72,7 +74,7 @@ class ChatAllMessages(private val chatId: UniqueIdentifier) : FlowLogic<List<Sta
 // get all messages for a chat by:
 //  from,
 //  subject,
-//  time range (newer than [datetimme], older than [another datetime]),
+//  time range (newer than [datetime], older than [another datetime]),
 //  and/or combination of above
 @InitiatingFlow
 @StartableByService
@@ -101,5 +103,30 @@ class ChatParticipants(private val chatId: UniqueIdentifier) : FlowLogic<List<Pa
     override fun call(): List<Party> {
         val headMessage = chatVaultService.getHeadMessage(chatId)
         return headMessage.state.data.let { it.to + it.from }.distinct()
+    }
+}
+
+
+// @todo: to implement
+// get close proposals for a chat
+@InitiatingFlow
+@StartableByService
+@StartableByRPC
+class ChatCloseProposals(private val chatId: UniqueIdentifier, private val proposalId: UniqueIdentifier) : FlowLogic<List<CloseChatState>>() {
+    @Suspendable
+    override fun call(): List<CloseChatState> {
+        return emptyList()
+    }
+}
+
+// @todo: to implement
+// get close proposals for a chat
+@InitiatingFlow
+@StartableByService
+@StartableByRPC
+class ChatUpdateParticipantsProposals(private val chatId: UniqueIdentifier, private val proposalId: UniqueIdentifier) : FlowLogic<List<UpdateParticipantsState>>() {
+    @Suspendable
+    override fun call(): List<UpdateParticipantsState> {
+        return emptyList()
     }
 }

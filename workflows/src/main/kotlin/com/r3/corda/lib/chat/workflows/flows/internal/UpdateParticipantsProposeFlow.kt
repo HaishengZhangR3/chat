@@ -24,6 +24,9 @@ class UpdateParticipantsProposeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
+        // @todo: if there are more than one proposals for the chat, how to differentiate between them?
+        //        at least, the agreer/rejecter should know which proposal to reject/agree?
+
         val headChatStateRef = chatVaultService.getHeadMessage(chatId)
         val headChat = headChatStateRef.state.data
 

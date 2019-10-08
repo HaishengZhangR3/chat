@@ -18,6 +18,9 @@ class CloseChatRejectFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
+        // @todo: code duplicat between all of the close flow?
+        // @todo: close should not be allowed if there is no propose
+        // @todo: reject the proposal from who? how to decide which proposal?
         val allCloseProposeStateRef = CloseChatUtils.getAllCloseStates(this, chatId)
         val headState = CloseChatUtils.getCloseProposeState(allCloseProposeStateRef)
 

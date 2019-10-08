@@ -15,6 +15,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
+// @todo: all tests to add details
 class SendMessageFlowTests {
 
     lateinit var network: MockNetwork

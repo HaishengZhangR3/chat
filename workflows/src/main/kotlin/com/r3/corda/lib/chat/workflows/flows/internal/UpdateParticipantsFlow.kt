@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.UpdateParticipants
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
-import com.r3.corda.lib.chat.workflows.flows.ShareChatHistoryFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -29,6 +28,7 @@ class UpdateParticipantsFlow(
         val proposeState = allUpdateStateRef.first{it.state.data.status == UpdateParticipantsStatus.PROPOSED}
         val proposeData = proposeState.state.data
 
+        // @todo: updating should not be allowed if there is no propose
         requireThat { "Only the proposer are allowed to close the chat" using (proposeData.from == ourIdentity) }
         if (!force) {
             areAllUpdateProposeAgreed(allUpdateStateRef)
@@ -69,7 +69,7 @@ class UpdateParticipantsFlow(
     @Suspendable
     private fun updateParticipants(proposeData: UpdateParticipantsState): SignedTransaction {
         val headChat = chatVaultService.getHeadMessage(chatId).state.data
-        val toList = (headChat.to + headChat.from + proposeData.toAdd - proposeData.toRemove - ourIdentity)
+        val toList = (headChat.to + headChat.from + proposeData.toAdd - proposeData.toRemove - ourIdentity).distinct()
 
         return subFlow(SendMessageFlow(
                 to = toList,
@@ -79,6 +79,7 @@ class UpdateParticipantsFlow(
     }
 
     private fun areAllUpdateProposeAgreed(allStates: List<StateAndRef<UpdateParticipantsState>>) {
+        // @todo: same as mentioned before: how to differentiate between proposal from different participant?
         allStates.map { it.state.data }.let {
             val proposed = it.filter { it.status == UpdateParticipantsStatus.PROPOSED }.size
             requireThat { "There should be at most 1 proposal." using (proposed == 1) }

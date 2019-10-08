@@ -22,6 +22,9 @@ import org.junit.Assert
 import org.junit.Test
 import java.time.Instant
 
+
+// @todo: add remove participants cases
+// @todo: add attachment test cases
 class IntegrationTest {
 
     companion object {

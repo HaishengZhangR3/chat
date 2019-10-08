@@ -1,7 +1,7 @@
-package com.r3.corda.lib.chat.workflows.test
+package com.r3.corda.lib.chat.workflows.test.internal
 
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.workflows.flows.ShareChatHistoryFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.ShareChatHistoryFlow
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters

@@ -21,6 +21,7 @@ class CloseChatAgreeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
+        // @todo: propose should fail if there is no chat in vault
         val allCloseStateRef = CloseChatUtils.getAllCloseStates(this, chatId)
         val proposedCloseStateRef = CloseChatUtils.getCloseProposeState(allCloseStateRef)
         val proposedCloseState = proposedCloseStateRef.state.data

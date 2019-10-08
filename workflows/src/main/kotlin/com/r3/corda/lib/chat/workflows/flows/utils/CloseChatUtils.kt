@@ -29,6 +29,7 @@ object CloseChatUtils {
         flow.serviceHub.recordTransactions(signedTxn)
     }
 
+    // @codo: code de-duplicate with other close flows
     fun getAllCloseStates(flow: FlowLogic<*>, linearId: ChatID): List<StateAndRef<CloseChatState>> {
         val allCloseStateRef = flow.chatVaultService.getActiveCloseChatStates(linearId)
         requireThat { "No close chat proposal." using (allCloseStateRef.isNotEmpty()) }
@@ -38,6 +39,7 @@ object CloseChatUtils {
         return allCloseStateRef
     }
 
+    // @todo: should not use "first", instead to handle the missing in our own way
     fun getCloseProposeState(allStates: List<StateAndRef<CloseChatState>>) = allStates.first { it.state.data.status == CloseChatStatus.PROPOSED }
 
     // check whether all of the participants agreed

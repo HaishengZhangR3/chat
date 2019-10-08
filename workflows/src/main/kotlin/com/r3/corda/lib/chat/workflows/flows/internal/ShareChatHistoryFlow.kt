@@ -1,4 +1,4 @@
-package com.r3.corda.lib.chat.workflows.flows
+package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.ShareHistory

@@ -20,6 +20,7 @@ class UpdateParticipantsRejectFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
+        // @todo: should be no reject if there is no propose
         val allUpdateStateRef = chatVaultService.getActiveParticipantsUpdateStates(chatId)
         val proposeState = allUpdateStateRef.first{it.state.data.status == UpdateParticipantsStatus.PROPOSED}
         val proposeData = proposeState.state.data

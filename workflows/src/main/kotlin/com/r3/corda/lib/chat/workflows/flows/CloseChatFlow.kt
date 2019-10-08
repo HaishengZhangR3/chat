@@ -21,6 +21,9 @@ class CloseChatFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
+        // @todo: close should fail if there is no chat in vault
+        // @todo: close should fail if there is no close propose
+
         // ask all parties to close the chats
         val allCloseStateRef = CloseChatUtils.getAllCloseStates(this, chatId)
         val proposedCloseStateRef = CloseChatUtils.getCloseProposeState(allCloseStateRef)
