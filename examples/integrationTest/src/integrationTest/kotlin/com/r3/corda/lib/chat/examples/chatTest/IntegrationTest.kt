@@ -281,37 +281,52 @@ class IntegrationTest {
             // 5X3: A -> (B, C); 5X3: B -> (B, C); so chats amount: A: 5X3, B: 5X3X2, C: 5X3X2
             log.warn("***** Let's chat and reply for a while.... *****")
 
-            val chatIDs: MutableList<UniqueIdentifier> = mutableListOf()
             val fromNodes = listOf(A, B)
             val toNodes = listOf(B, C)
             val toList = listOf(B.legalIdentity(), C.legalIdentity())
 
             val howManyChats = 5
-            val idToChatsAmount = mapOf(
+
+            val howManyUniqueIdentifier: MutableMap<Party, MutableSet<UniqueIdentifier>> =
+                    mutableMapOf(
+                            A.nodeInfo.legalIdentities.first() to mutableSetOf(),
+                            B.nodeInfo.legalIdentities.first() to mutableSetOf(),
+                            C.nodeInfo.legalIdentities.first() to mutableSetOf()
+                    )
+
+            val howManyMessages = mapOf(
                     A to howManyChats * 3,
                     B to howManyChats * 3 * 2,
                     C to howManyChats * 3 * 2
             )
 
-            val idToChatsParticipants = mapOf(
+            val howManyChatsParticipants = mapOf(
                     A to listOf(B.legalIdentity(), C.legalIdentity(), A.legalIdentity()),
                     B to listOf(B.legalIdentity(), C.legalIdentity()),
                     C to listOf(B.legalIdentity(), C.legalIdentity())
             )
 
             for (i in 0 until howManyChats) {
-                fromNodes.map {
-                    val fromNodeName = it.nodeInfo.legalIdentities.first().name
-                    log.warn("***** Creating chat on node ${it.nodeInfo.legalIdentities.first().name} *****")
-                    val chatOnA = createChat(who = it, toList = toList, any = "from $fromNodeName")
-                    chatIDs.add(chatOnA.linearId)
-                    log.warn("***** The chat created is: ${chatOnA.linearId} *****")
+                fromNodes.map { node ->
+                    val fromNodeName = node.nodeInfo.legalIdentities.first().name
+                    log.warn("***** Creating chat on node ${node.nodeInfo.legalIdentities.first().name} *****")
+                    val chatOnNode = createChat(who = node, toList = toList, any = "from $fromNodeName")
+                    (toList + node.nodeInfo.legalIdentities).distinct().map { party ->
+                        howManyUniqueIdentifier[party]?.add(chatOnNode.linearId)
+                    }
+
+                    log.warn("***** The chat created is: ${chatOnNode.linearId} *****")
 
                     toNodes.map {
                         val toNodeName = it.nodeInfo.legalIdentities.first().name
                         log.warn("***** Reply chat from ${toNodeName} *****")
-                        val chatOnB = replyChat(who = it, chatId = chatOnA.linearId, any = "from ${toNodeName}")
-                        log.warn("***** The chat replied: ${chatOnB.linearId} *****")
+                        val chatOnReply = replyChat(who = it, chatId = chatOnNode.linearId, any = "from ${toNodeName}")
+
+                        (toList + node.nodeInfo.legalIdentities).distinct().map { party ->
+                            howManyUniqueIdentifier[party]?.add(chatOnReply.linearId)
+                        }
+
+                        log.warn("***** The chat replied: ${chatOnReply.linearId} *****")
                     }
                 }
             }
@@ -321,62 +336,70 @@ class IntegrationTest {
 
             log.warn("***** All chatIDs *****")
             val allChatIDsFromVault = getAllChatIDs(A)
-//            Assert.assertEquals(allChatIDsFromVault.size, chatIDs.size)
-//            Assert.assertTrue((allChatIDsFromVault - chatIDs).isEmpty())
-//            Assert.assertTrue((chatIDs - allChatIDsFromVault).isEmpty())
+
+            val howManyUniqueIdentifierA = howManyUniqueIdentifier.getOrDefault(A.nodeInfo.legalIdentities.first(), mutableSetOf())
+            val howManyChatsMessagesA = howManyMessages.getOrDefault(A, 0)
+
+            Assert.assertEquals(allChatIDsFromVault.size, howManyUniqueIdentifierA.size)
+            Assert.assertTrue((allChatIDsFromVault - howManyUniqueIdentifierA).isEmpty())
+            Assert.assertTrue((howManyUniqueIdentifierA - allChatIDsFromVault).isEmpty())
 
             log.warn("***** All chats and messages *****")
             val allChatsFromVault = getAllChats(A)
+            Assert.assertEquals(howManyChatsMessagesA, allChatsFromVault.size)
+
             val idsAllChatsFromVault = allChatsFromVault.map {
                 it.state.data.linearId
             }.toList().distinct()
 
-//            Assert.assertEquals(idsAllChatsFromVault.size, chatIDs.size)
-//            Assert.assertTrue((idsAllChatsFromVault - chatIDs).isEmpty())
-//            Assert.assertTrue((chatIDs - idsAllChatsFromVault).isEmpty())
+            Assert.assertEquals(idsAllChatsFromVault.size, howManyUniqueIdentifierA.size)
+            Assert.assertTrue((idsAllChatsFromVault - howManyUniqueIdentifierA).isEmpty())
+            Assert.assertTrue((howManyUniqueIdentifierA - idsAllChatsFromVault).isEmpty())
 
             log.warn("***** All chats and messages with filter applied *****")
             val allChatsSpec = ChatQuerySpec(
                     initiator = A.legalIdentity(),
-                    subject = "Sample Topic"
+                    subject = "%Sample Topic%"
             )
             val filteredChats = getAllChatsBy(A, allChatsSpec)
-//            Assert.assertNotNull(filteredChats)
-//            Assert.assertEquals(filteredChats.size, idToChatsAmount[A])
+            Assert.assertNotNull(filteredChats)
+            Assert.assertEquals(filteredChats.size, howManyChats) // only "howManyChats" chat/message initiated by A
 
-            for (id in chatIDs) {
-                for (node in listOf(A, B, C)) {
-                    val chatAllMessagesFromVault = getChatAllMessages(node, id)
-                    log.warn("***** Messages for ID: $id *****")
-//                    Assert.assertEquals(chatAllMessagesFromVault.size, idToChatsAmount[node])
-                    chatAllMessagesFromVault.map {
-                        log.warn("${it.state.data}")
-                    }
+            // check message level information, take C as example
+            val node = A
+            val idList = howManyUniqueIdentifier.getOrDefault(node.nodeInfo.legalIdentities.first(), mutableSetOf())
+            val howManyChatsParticipantsA = howManyChatsParticipants.getOrDefault(A, emptyList())
 
-                    log.warn("***** All messages for one single chat with filter applied *****")
-                    val allMessagesSpec = ChatQuerySpec(
-                            chatId = id,
-                            initiator = node.legalIdentity(),
-                            subject = "Sample Topic",
-                            createdTimeFrom = Instant.now().minusSeconds(100L),
-                            createdTimeUntil = Instant.now().plusSeconds(1L)
-                    )
-                    val filteredMessages = getChatMessagesBy(node, allChatsSpec)
-//                    Assert.assertNotNull(filteredMessages)
-//                    Assert.assertEquals(filteredMessages.size, idToChatsAmount[node])
-
-                    log.warn("***** chat status: active, close proposed, closed for one chat by ID *****")
-                    val chatStatusFromVault = getChatCurrentStatus(node, id)
-//                    Assert.assertEquals(chatStatusFromVault, ChatStatus.ACTIVE)
-
-
-                    log.warn("***** All participants for one chat by ID *****")
-                    val chatParticipantsFromVault = getChatParticipants(node, id)
-//                    Assert.assertEquals(chatParticipantsFromVault.size, idToChatsParticipants.values.size)
-//                    Assert.assertEquals((chatParticipantsFromVault - idToChatsParticipants.values).size, 0)
-//                    Assert.assertEquals((idToChatsParticipants.values - chatParticipantsFromVault).size, 0)
-
+            for (id in idList) {
+                val chatAllMessagesFromVault = getChatAllMessages(node, id)
+                log.warn("***** Messages for ID: $id *****")
+                Assert.assertEquals(chatAllMessagesFromVault.size, 3)
+                chatAllMessagesFromVault.map {
+                    log.warn("${it.state.data}")
                 }
+
+                log.warn("***** All messages for one single chat with filter applied *****")
+                val allMessagesSpec = ChatQuerySpec(
+                        chatId = id,
+                        initiator = node.legalIdentity(),
+                        subject = "%Sample Topic%",
+                        createdTimeFrom = Instant.now().minusSeconds(100L),
+                        createdTimeUntil = Instant.now().plusSeconds(1L)
+                )
+                val filteredMessages = getChatMessagesBy(node, allMessagesSpec)
+                Assert.assertNotNull(filteredMessages)
+                Assert.assertEquals(filteredMessages.size, 1)
+
+                log.warn("***** chat status: active, close proposed, closed for one chat by ID *****")
+                val chatStatusFromVault = getChatCurrentStatus(node, id)
+                Assert.assertEquals(chatStatusFromVault, ChatStatus.ACTIVE)
+
+
+                log.warn("***** All participants for one chat by ID *****")
+                val chatParticipantsFromVault = getChatParticipants(node, id)
+                Assert.assertEquals(chatParticipantsFromVault.size, howManyChatsParticipantsA.size)
+                Assert.assertEquals((chatParticipantsFromVault - howManyChatsParticipantsA).size, 0)
+                Assert.assertEquals((howManyChatsParticipantsA - chatParticipantsFromVault).size, 0)
             }
             log.warn("**** All passed, happy *****")
         }
@@ -396,49 +419,56 @@ class IntegrationTest {
 
             log.warn("***** Reply chat from B *****")
             val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
-            log.warn("***** The chat replied from B: ${chatOnB.linearId} *****")
+            log.warn("***** The chat ${chatOnB.linearId} is replied from B *****")
 
             log.warn("***** Propose/agree/do add participants from B *****")
             addParticipantsToChat(proposer = B, agreeer = listOf(A), toAdd = listOf(C.legalIdentity()), chatId = chatOnA.linearId)
+            log.warn("***** Participant ${C.legalIdentity()} is add to chat ${chatOnB.linearId} *****")
 
             log.warn("***** All chatIDs *****")
             val allChatIDsFromVault = getAllChatIDs(A)
+            log.warn("***** All chatIDs: $allChatIDsFromVault *****")
 
             log.warn("***** All chats and messages *****")
             val allChatsFromVault = getAllChats(A)
+            log.warn("***** All chats: $allChatsFromVault *****")
 
             log.warn("***** All chats and messages with filter applied *****")
             val allChatsSpec = ChatQuerySpec(
                     initiator = A.legalIdentity(),
-                    subject = "Sample Topic",
+                    subject = "%Sample Topic%",
                     createdTimeFrom = Instant.now().minusSeconds(100L),
                     createdTimeUntil = Instant.now().plusSeconds(1L)
             )
             val filteredChats = getAllChatsBy(A, allChatsSpec)
+            log.warn("***** Filtered chats: $filteredChats, filer condition: $allChatsSpec *****")
 
             log.warn("***** All messages for one single chat by ID: ${chatOnA.linearId} *****")
             val chatAllMessagesFromVault = getChatAllMessages(A, chatOnA.linearId)
+            log.warn("***** All messages for ${chatOnA.linearId} are: $chatAllMessagesFromVault *****")
 
             log.warn("***** All messages for one single chat with filter applied *****")
             val allChatMessagesSpec = ChatQuerySpec(
                     chatId = chatOnA.linearId,
                     initiator = A.legalIdentity(),
-                    subject = "Sample Topic",
+                    subject = "%Sample Topic%",
                     createdTimeFrom = Instant.now().minusSeconds(100L),
                     createdTimeUntil = Instant.now().plusSeconds(1L)
             )
             val filteredChatMessages = getChatMessagesBy(A, allChatMessagesSpec)
+            log.warn("***** Filtered messages: $filteredChatMessages, filer condition: $allChatMessagesSpec *****")
 
-            log.warn("***** chat status: active, close proposed, closed for one chat by ID *****")
+            log.warn("***** Chat status: active, close proposed, closed for one chat by ID *****")
             val chatStatusFromVault = getChatCurrentStatus(B, chatOnA.linearId)
+            log.warn("***** Chat status for ${chatOnA.linearId} is: $chatStatusFromVault *****")
 
             log.warn("***** All participants for one chat by ID *****")
             val chatParticipantsFromVault = getChatParticipants(C, chatOnA.linearId)
+            log.warn("***** The participants for ${chatOnA.linearId} are: $chatParticipantsFromVault *****")
 
             log.warn("***** Propose/agree/do close from B *****")
             closeChat(proposer = B, agreeer = listOf(A, C), chatId = chatOnA.linearId)
-
-            log.warn("***** Chat ${chatOnA.linearId} closed *****")
+            log.warn("***** Chat ${chatOnA.linearId} is closed *****")
 
             log.warn("**** All passed, happy *****")
         }

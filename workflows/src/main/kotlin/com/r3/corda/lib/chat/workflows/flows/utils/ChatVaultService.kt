@@ -13,6 +13,7 @@ import net.corda.core.node.services.Vault.StateStatus
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.*
 import net.corda.core.serialization.SingletonSerializeAsToken
+import java.util.*
 
 // @todo: support paging: PageSpecification for every query
 
@@ -37,7 +38,7 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
                 criteria = QueryCriteria.LinearStateQueryCriteria(status = status).and(idGroupCriteria)
         )
 
-        return chatInfos.states.map { it.state.data.linearId }
+        return chatInfos.otherResults.filterIsInstance<UUID>().distinct().map { UniqueIdentifier(id=it) }
     }
 
     // get all chats
