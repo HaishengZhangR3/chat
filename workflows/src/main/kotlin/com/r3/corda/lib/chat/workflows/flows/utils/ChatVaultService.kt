@@ -169,17 +169,27 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
                     .filter { it.state.data.linearId == chatId }
                     .toSet()
 
+    /* get ParticipantsUpdate proposal */
+    fun getUpdateParticipantsProposal(chatId: UniqueIdentifier) =
+            getVaultStates<UpdateParticipantsState>(chatId).first{it.state.data.status == UpdateParticipantsStatus.PROPOSED}.state.data
+
     /* get ParticipantsUpdate head */
     fun getHeadParticipantsUpdateState(chatId: UniqueIdentifier) =
             getHeadState<UpdateParticipantsState>(chatId)
 
+    /* get ParticipantsUpdate all */
     fun getActiveParticipantsUpdateStates(chatId: UniqueIdentifier) =
             getVaultStates<UpdateParticipantsState>(chatId)
+
+    /* get CloseChatState proposal */
+    fun getCloseChatStateProposal(chatId: UniqueIdentifier) =
+            getVaultStates<CloseChatState>(chatId).first{it.state.data.status == CloseChatStatus.PROPOSED}.state.data
 
     /* get CloseChatState head */
     fun getHeadCloseChatState(chatId: UniqueIdentifier) =
             getHeadState<CloseChatState>(chatId)
 
+    /* get CloseChatState all */
     fun getActiveCloseChatStates(chatId: UniqueIdentifier) =
             getVaultStates<CloseChatState>(chatId)
 

@@ -90,6 +90,8 @@ class IntegrationTest {
                 chatId
         ).returnValue.getOrThrow()
 
+        // @todo: call ChatCloseProposal to get close proposal and check
+
         log.warn("***** Close proposal agreed *****")
         val agree = agreeer.map {
             it.rpc.startFlow(

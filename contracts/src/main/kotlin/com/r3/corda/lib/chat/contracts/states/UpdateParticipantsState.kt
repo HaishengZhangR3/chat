@@ -14,10 +14,15 @@ sealed class UpdateParticipantsStatus {
     object REJECTED : UpdateParticipantsStatus()
 }
 
-// @todo: add a updating proposal ID to distinguish between several proposals. use linearId as its own key, add a new chatId.
 //  also add argument in the flows
 @BelongsToContract(ChatInfoContract::class)
 data class UpdateParticipantsState(
+        // update participants state does **not** need a unique ID, since we define the rule as:
+        // if there is a updating propose, then no one else could propose again, instead, agree is needed.
+        // reason is, if multiple parties proposed multiple ideas, we have to do merge logic, which is very easy to get wrong.
+        // this is very similar with GIT file diff, which always merge your local version with the remote version,
+        // and sometime it'll ask you to decide which version to take or neither or part of both, which is challenging.
+
         override val linearId: ChatID,
         override val created: Instant = Instant.now(),
         override val participants: List<AbstractParty>,

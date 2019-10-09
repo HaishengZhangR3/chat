@@ -15,11 +15,12 @@ sealed class CloseChatStatus {
     object REJECTED : CloseChatStatus()
 }
 
-// @todo: add a close proposal ID to distinguish between several proposals. use linearId as its own key, add a new chatId.
 //  also add argument in the flows
 @BelongsToContract(ChatInfoContract::class)
 data class CloseChatState(
-        override val linearId: UniqueIdentifier,
+        // close chat state does **not** need a unique ID, since we define the rule as:
+        // if there is a close propose, then no one else could propose again, instead, agree is needed.
+        override val linearId: ChatID,
         override val created: Instant = Instant.now(),
         override val participants: List<AbstractParty>,
         val from: Party,

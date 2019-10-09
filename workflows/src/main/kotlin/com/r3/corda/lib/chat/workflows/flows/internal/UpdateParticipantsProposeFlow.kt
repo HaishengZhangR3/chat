@@ -24,9 +24,7 @@ class UpdateParticipantsProposeFlow(
     @Suspendable
     override fun call(): SignedTransaction {
 
-        // @todo: if there are more than one proposals for the chat, how to differentiate between them?
-        //        at least, the agreer/rejecter should know which proposal to reject/agree?
-
+        // @todo: there should not be more than one proposals for the chat
         val headChatStateRef = chatVaultService.getHeadMessage(chatId)
         val headChat = headChatStateRef.state.data
 
@@ -36,6 +34,7 @@ class UpdateParticipantsProposeFlow(
         requireThat { "Cannot remove every participants." using needSigns.isNotEmpty()}
         // @todo: new added must not be in existing list
         // @todo: toRemove must be in existing list
+        // @todo: can move myself? yes, don't block this logic
 
         val toParties = needSigns - ourIdentity
 

@@ -19,14 +19,14 @@ import java.time.Instant
 
 @CordaSerializable
 sealed class ChatStatus {
-    object ACTIVE: ChatStatus()
+    object ACTIVE : ChatStatus()
     object CLOSE_PROPOSED : ChatStatus()
     object CLOSE_AGREED : ChatStatus()
     object CLOSED : ChatStatus()
 }
 
 @CordaSerializable
-data class ChatQuerySpec (
+data class ChatQuerySpec(
         val chatId: UniqueIdentifier? = null,
         val initiator: Party? = null,
         val subject: String? = null,    // iLike subject, no wildcard
@@ -107,26 +107,20 @@ class ChatParticipants(private val chatId: UniqueIdentifier) : FlowLogic<List<Pa
 }
 
 
-// @todo: to implement
 // get close proposals for a chat
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class ChatCloseProposals(private val chatId: UniqueIdentifier, private val proposalId: UniqueIdentifier) : FlowLogic<List<CloseChatState>>() {
+class ChatCloseProposal(private val chatId: UniqueIdentifier) : FlowLogic<CloseChatState>() {
     @Suspendable
-    override fun call(): List<CloseChatState> {
-        return emptyList()
-    }
+    override fun call(): CloseChatState = chatVaultService.getCloseChatStateProposal(chatId)
 }
 
-// @todo: to implement
-// get close proposals for a chat
+// get participant updating proposals for a chat
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class ChatUpdateParticipantsProposals(private val chatId: UniqueIdentifier, private val proposalId: UniqueIdentifier) : FlowLogic<List<UpdateParticipantsState>>() {
+class ChatUpdateParticipantsProposal(private val chatId: UniqueIdentifier) : FlowLogic<UpdateParticipantsState>() {
     @Suspendable
-    override fun call(): List<UpdateParticipantsState> {
-        return emptyList()
-    }
+    override fun call(): UpdateParticipantsState = chatVaultService.getUpdateParticipantsProposal(chatId)
 }

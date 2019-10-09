@@ -56,6 +56,14 @@ class CreateChatFlow(
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
+
+        // @todo this is a very important step: to notice the caller CorDapp that we have a new msg
+        //       doing this can be achieved by observer mode (notify to whom should know), refer to:
+        //              https://github.com/roger3cev/observable-states
+        //       the observer mode should apply every time when we save anything to vault, i.e.,
+        //       a proposal, an agree, new message or reply message to audience.
+        //       and the caller CorDapp should implement the @InitiatedBy flow to handle this.
+        //       Typically, it'll setup a websocket to let UI knows the change and call API to get details
         return signedTxn.coreTransaction.outRefsOfType<ChatInfo>().single()
     }
 }
