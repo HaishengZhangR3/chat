@@ -1,4 +1,4 @@
 include 'contracts'
 include 'workflows'
-include 'examples:supplychain'
+include 'examples:supplychain-webserver'
 include 'examples:integrationTest'
