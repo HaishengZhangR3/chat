@@ -4,37 +4,37 @@ buildscript {
     ext {
         corda_release_group = 'net.corda'
         corda_release_version = '4.1'
-        corda_gradle_plugins_version = '4.0.45'
+        chat_release_group = 'com.r3.corda.lib.chat'
+        chat_release_version = '1.0-RC01'
+        corda_gradle_plugins_version = '4.0.42'
+        mavenVersion = '3.1.0'
+        maven_resolver_version = "1.1.1"
         kotlin_version = '1.2.71'
         junit_version = '4.12'
         quasar_version = '0.7.10'
-        log4j_version = '2.11.2'
-        slf4j_version = '1.7.25'
-        corda_platform_version = constants.getProperty("platformVersion")
+        log4j_version = '2.9.1'
         spring_boot_version = '2.0.2.RELEASE'
         spring_boot_gradle_plugin_version = '2.1.1.RELEASE'
-        supply_chain_release_version = '1.0-RC01'
     }
 
     repositories {
         mavenLocal()
         mavenCentral()
         jcenter()
-        maven { url 'https://jitpack.io' }
 		maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases' }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
         classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_gradle_plugin_version"
     }
 }
 
+apply from: 'repositories.gradle'
+
 apply plugin: 'kotlin'
-apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'net.corda.plugins.quasar-utils'
@@ -52,28 +52,19 @@ dependencies {
     cordapp project(":workflows")
     cordapp project(":contracts")
 
-    // kotlin
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"
 
     // Corda dependencies.
-    cordaCompile "$corda_release_group:corda:$corda_release_version"
-    cordaCompile "$corda_release_group:corda-jackson:$corda_release_version"
-    cordaCompile "$corda_release_group:corda-core:$corda_release_version"
-    cordaCompile "$corda_release_group:corda-rpc:$corda_release_version"
-    cordaCompile "$corda_release_group:corda-node-api:$corda_release_version"
+    compile "$corda_release_group:corda-core:$corda_release_version"
+    compile "$corda_release_group:corda-rpc:$corda_release_version"
     compile("org.springframework.boot:spring-boot-starter-websocket:$spring_boot_version") {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
     compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4j_version"
     compile "org.apache.logging.log4j:log4j-web:$log4j_version"
     runtime "$corda_release_group:corda:$corda_release_version"
-
-    // web server socket
-    compile 'org.java-websocket:Java-WebSocket:1.4.0'
-    compile "javax.ws.rs:javax.ws.rs-api:2.0"
-
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
@@ -88,15 +79,31 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     nodeDefaults {
         projectCordapp {
-            deploy = true
+            deploy = false
         }
     }
     signing {
         enabled false
     }
     node {
+        name "O=Notary,L=London,C=GB"
+        notary = [validating: false]
+        p2pPort 10000
+        sshdPort 2221
+        rpcSettings {
+            address("localhost:10001")
+            adminAddress("localhost:10045")
+        }
+        extraConfig = [
+                custom: [
+                        jvmArgs: ["-Xmx4g", "-XX:+UseG1GC"]
+                ]
+        ]
+    }
+    node {
         name "O=PartyA,L=London,C=GB"
         p2pPort 10005
+        sshdPort 2222
         rpcSettings {
             address("localhost:10006")
             adminAddress("localhost:10046")
@@ -108,6 +115,54 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
                 ]
         ]
     }
+    node {
+        name "O=Agent,L=London,C=GB"
+        p2pPort 10010
+        sshdPort 2223
+        rpcSettings {
+            address("localhost:10011")
+            adminAddress("localhost:10047")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+        extraConfig = [
+                custom: [
+                        jvmArgs: ["-Xmx4g", "-XX:+UseG1GC"]
+                ]
+        ]
+    }
+//    node {
+//        name "O=FundManager1,L=New York,C=US"
+//        p2pPort 10015
+//        sshdPort 2224
+//        webPort 50002
+//        rpcSettings {
+//            address("localhost:10016")
+//            adminAddress("localhost:10048")
+//        }
+//        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+//    }
+//    node {
+//        name "O=FundManager2,L=Paris,C=FR"
+//        p2pPort 10020
+//        sshdPort 2225
+//        webPort 50003
+//        rpcSettings {
+//            address("localhost:10021")
+//            adminAddress("localhost:10049")
+//        }
+//        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+//    }
+//    node {
+//        name "O=Administrator1,L=Paris,C=FR"
+//        p2pPort 10025
+//        sshdPort 2226
+//        webPort 50004
+//        rpcSettings {
+//            address("localhost:10026")
+//            adminAddress("localhost:10050")
+//        }
+//        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+//    }
 }
 
 task runPartyAServer(type: JavaExec, dependsOn: jar) {
@@ -116,23 +171,6 @@ task runPartyAServer(type: JavaExec, dependsOn: jar) {
 }
 
 bootJar {
-    baseName = "supplychain-webserver"
-    version = "${supply_chain_release_version}"
-}
-
-
-sourceSets {
-    supplychain {
-        kotlin {
-            compileClasspath += main.output + test.output
-            runtimeClasspath += main.output + test.output
-            srcDir file('src/main/kotlin')
-        }
-    }
-}
-
-
-task supplychainwebserver(type: Test, dependsOn: []) {
-    testClassesDirs = sourceSets.supplychain.output.classesDirs
-    classpath = sourceSets.supplychain.runtimeClasspath
+    baseName = "spring-webserver"
+    version = "1.0-RC01"
 }
