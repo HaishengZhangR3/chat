@@ -1,5 +1,10 @@
 package net.corda.server.controllers
 
+import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import net.corda.core.identity.Party
+import net.corda.core.messaging.startFlow
+import net.corda.core.utilities.getOrThrow
 import net.corda.server.NodeRPCConnection
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,7 +23,26 @@ class CustomController(rpc: NodeRPCConnection) {
     }
 
     private val proxy = rpc.proxy
+    private val me = proxy.nodeInfo().legalIdentities.first()
 
-    @GetMapping(value = "/customendpoint", produces = arrayOf("text/plain"))
-    private fun status() = "Modify this."
+    @GetMapping(value = "/test", produces = arrayOf("text/plain"))
+    private fun status() = "from test web"
+
+    @GetMapping(value = "/createChat", produces = arrayOf("text/plain"))
+    private fun createchat() = createChat(listOf(me), "from test web").subject
+
+
+
+
+    private fun createChat( toList: List<Party>, any: String): ChatInfo {
+        val createChat = proxy.startFlow(
+                ::CreateChatFlow,
+                "Sample Topic $any",
+                "Some sample content created $any",
+                null,
+                toList
+        ).returnValue.getOrThrow()
+        return createChat.state.data
+    }
+
 }

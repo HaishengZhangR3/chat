@@ -13,7 +13,7 @@ The Spring web server is defined in the `server` module, and has two parts:
 * `src/main/resources/static`, which defines the webserver's frontend
 * `src/main/kotlin/net/corda/server`, which defines the webserver's backend
 
-The backend controllers are defined in `server/src/main/kotlin/net/corda/server/Controller`:
+The backend has two controllers, defined in `server/src/main/kotlin/net/corda/server/Controller.kt`:
 
 * `StandardController`, which provides generic (non-CorDapp specific) REST endpoints
 * `CustomController`, which the user can extend to provide CorDapp-specific REST endpoints
@@ -27,12 +27,10 @@ See https://docs.corda.net/getting-set-up.html.
 ## Running the nodes:
 
 See https://docs.corda.net/tutorial-cordapp.html#running-the-example-cordapp.
-* ./gradlew deployNodes
-* ./build/nodes/runnodes
 
 ## Running the webservers:
 
-Once the nodes are running (meaning the RPC service is ready for web service to connect), there are several ways to run the webservers. All these approaches 
+Once the nodes are running, there are several ways to run the webservers. All these approaches 
 read their properties from the `src/main/resources/application.properties` file:
 
 * `server.port`, which defines the HTTP port the webserver listens on
