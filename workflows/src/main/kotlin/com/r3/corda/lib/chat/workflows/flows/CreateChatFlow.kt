@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.Create
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.workflows.flows.service.NotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -87,6 +88,9 @@ class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<S
 
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
+
+        // notify caller app of the event, if the app is listening
+        subFlow(NotifyFlow(chatId = chatInfo.linearId, command = "Chat Created"))
         return signedTxn
     }
 }
