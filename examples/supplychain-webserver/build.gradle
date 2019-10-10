@@ -3,7 +3,7 @@ buildscript {
 
     ext {
         corda_release_group = 'net.corda'
-        corda_release_version = '4.0'
+        corda_release_version = '4.1'
         corda_gradle_plugins_version = '4.0.45'
         kotlin_version = '1.2.71'
         junit_version = '4.12'
@@ -13,26 +13,28 @@ buildscript {
         corda_platform_version = constants.getProperty("platformVersion")
         spring_boot_version = '2.0.2.RELEASE'
         spring_boot_gradle_plugin_version = '2.1.1.RELEASE'
+        supply_chain_release_version = '1.0-RC01'
     }
 
     repositories {
         mavenLocal()
         mavenCentral()
         jcenter()
+        maven { url 'https://jitpack.io' }
 		maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases' }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
         classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_gradle_plugin_version"
     }
 }
 
-apply from: 'repositories.gradle'
-
 apply plugin: 'kotlin'
+apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'net.corda.plugins.quasar-utils'
@@ -50,14 +52,23 @@ dependencies {
     cordapp project(":workflows")
     cordapp project(":contracts")
 
+    compile fileTree(dir: 'libs', include: [ '*.jar'])
+
+    // chat sdk
+    cordapp "com.r3.corda.lib.chat:chat-contracts:1.0-RC01"
+    cordapp "com.r3.corda.lib.chat:chat-workflows:1.0-RC01"
+
     // kotlin
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"
 
     // Corda dependencies.
-    compile "$corda_release_group:corda-core:$corda_release_version"
-    compile "$corda_release_group:corda-rpc:$corda_release_version"
+    cordaCompile "$corda_release_group:corda:$corda_release_version"
+    cordaCompile "$corda_release_group:corda-jackson:$corda_release_version"
+    cordaCompile "$corda_release_group:corda-core:$corda_release_version"
+    cordaCompile "$corda_release_group:corda-rpc:$corda_release_version"
+    cordaCompile "$corda_release_group:corda-node-api:$corda_release_version"
     compile("org.springframework.boot:spring-boot-starter-websocket:$spring_boot_version") {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
@@ -67,6 +78,7 @@ dependencies {
 
     // web server socket
     compile 'org.java-websocket:Java-WebSocket:1.4.0'
+    compile "javax.ws.rs:javax.ws.rs-api:2.0"
 
 }
 
@@ -82,7 +94,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     nodeDefaults {
         projectCordapp {
-            deploy = false
+            deploy = true
         }
     }
     signing {
@@ -105,6 +117,23 @@ task runPartyAServer(type: JavaExec, dependsOn: jar) {
 }
 
 bootJar {
-    baseName = "corda-webserver"
-    version = ""
+    baseName = "supplychain-webserver"
+    version = "${supply_chain_release_version}"
+}
+
+
+sourceSets {
+    supplychain {
+        kotlin {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/main/kotlin')
+        }
+    }
+}
+
+
+task supplychainwebserver(type: Test, dependsOn: []) {
+    testClassesDirs = sourceSets.supplychain.output.classesDirs
+    classpath = sourceSets.supplychain.runtimeClasspath
 }

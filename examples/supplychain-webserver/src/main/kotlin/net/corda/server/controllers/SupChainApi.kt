@@ -1,4 +1,4 @@
-package com.r3.demo.api
+package net.corda.server.controllers
 
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import net.corda.core.contracts.StateAndRef
