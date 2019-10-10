@@ -54,10 +54,6 @@ dependencies {
 
     compile fileTree(dir: 'libs', include: [ '*.jar'])
 
-    // chat sdk
-    cordapp "com.r3.corda.lib.chat:chat-contracts:1.0-RC01"
-    cordapp "com.r3.corda.lib.chat:chat-workflows:1.0-RC01"
-
     // kotlin
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
