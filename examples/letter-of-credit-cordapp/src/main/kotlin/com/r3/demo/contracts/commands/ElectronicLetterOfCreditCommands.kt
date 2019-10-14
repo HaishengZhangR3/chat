@@ -2,18 +2,15 @@ package com.r3.demo.contracts.commands
 
 import net.corda.core.contracts.CommandData
 
-interface ChatCommand : CommandData
+interface LoCCommand : CommandData
 
-class Create : ChatCommand
-class Reply : ChatCommand
-class ShareHistory : ChatCommand
-
-class Close : ChatCommand
-class ProposeClose : ChatCommand
-class AgreeClose : ChatCommand
-class RejectClose : ChatCommand
-
-class UpdateParticipants : ChatCommand
-class ProposeUpdateParticipants : ChatCommand
-class AgreeUpdateParticipants : ChatCommand
-class RejectUpdateParticipants : ChatCommand
+class SignContract : LoCCommand
+class ApplyELC : LoCCommand
+class AgreeELC : LoCCommand
+class RejectELC : LoCCommand
+class IssueELC : LoCCommand
+class AdviceELC : LoCCommand
+class Ship : LoCCommand
+class ReceiveShip : LoCCommand
+class DispatchPresentReleaseEDoc : LoCCommand
+class Pay : LoCCommand

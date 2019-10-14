@@ -1,8 +1,9 @@
 package com.r3.demo.flow
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.demo.contracts.commands.Ship
-import com.r3.demo.contracts.states.*
+import com.r3.demo.contracts.commands.ReceiveShip
+import com.r3.demo.contracts.states.Shipment
+import com.r3.demo.contracts.states.ShipmentStatus
 import com.r3.demo.vaultService
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -14,42 +15,32 @@ import java.time.Instant
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class ShipFlow(
-        private val importer: Party
+class ShipReceiveFlow(
+        private val exporter: Party
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
 
-        // get contract for details
-        val contract = vaultService.getVaultStates<SaleContract>()
-                .first { it.state.data.buyer == importer
-                        && it.state.data.seller == ourIdentity
+        // get shipment
+        val ship = vaultService.getVaultStates<Shipment>()
+                .first { it.state.data.exporter == exporter
+                        && it.state.data.importer == ourIdentity
                 }
 
-        // do I get "ISSUED" LoC?
-        val issuedLoc = vaultService.getVaultStates<ElectronicLetterOfCredit>()
-                .first { it.state.data.status == LoCStatus.ISSUED
-                        && it.state.data.beneficiary == ourIdentity
-                }
-
-        val state = Shipment(
-                exporter = ourIdentity,
-                importer = importer,
-                productName = contract.state.data.productName,
-                timeShipped = Instant.now(),
-                timeReceived = null,
-                status = ShipmentStatus.SHIPPED,
-                participants = listOf(importer, ourIdentity)
+        val state = ship.state.data.copy(
+                timeReceived = Instant.now(),
+                status = ShipmentStatus.RECEIVED
         )
 
         val txn = TransactionBuilder(vaultService.notary())
-                .addCommand(Ship(), state.participants.map { it.owningKey })
+                .addCommand(ReceiveShip(), state.participants.map { it.owningKey })
+                .addInputState(ship)
                 .addOutputState(state)
                 .also { it.verify(serviceHub) }
 
         val selfSignedTxn = serviceHub.signInitialTransaction(txn)
-        val counterPartySessions = listOf(importer).map { initiateFlow(it) }
+        val counterPartySessions = listOf(exporter).map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
 
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
@@ -57,8 +48,8 @@ class ShipFlow(
     }
 }
 
-@InitiatedBy(ShipFlow::class)
-class ShipFlowResponder(val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
+@InitiatedBy(ShipReceiveFlow::class)
+class ShipReceiveFlowResponder(val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
