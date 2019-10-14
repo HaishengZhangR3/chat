@@ -18,7 +18,7 @@ apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
 
-jar.baseName = "supplychain-cordapp"
+jar.baseName = "letter-of-credit-cordapp"
 
 cordapp {
     targetPlatformVersion 4
@@ -60,7 +60,7 @@ dependencies {
 }
 
 sourceSets {
-    supplychain {
+    loc {
         kotlin {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
@@ -69,12 +69,12 @@ sourceSets {
     }
 }
 
-task supplyChain(type: Test, dependsOn: []) {
-    testClassesDirs = sourceSets.supplychain.output.classesDirs
-    classpath = sourceSets.supplychain.runtimeClasspath
+task loc(type: Test, dependsOn: []) {
+    testClassesDirs = sourceSets.loc.output.classesDirs
+    classpath = sourceSets.loc.runtimeClasspath
 }
 
 jar {
-    baseName = "supplychain-cordapp"
+    baseName = "letter-of-credit-cordapp"
     version = "1.0.0.0"
 }

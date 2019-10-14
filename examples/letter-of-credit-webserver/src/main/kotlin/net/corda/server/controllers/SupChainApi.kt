@@ -17,7 +17,7 @@ import javax.ws.rs.core.MediaType
  * This API is accessible from /api/iou. The endpoint paths specified below are relative to it.
  * We've defined a bunch of endpoints to deal with IOUs, cash and the various operations you can perform with them.
  */
-@Path("supplychain")
+@Path("loc")
 class SupChainApi(val rpcOps: CordaRPCOps) {
     private val me = rpcOps.nodeInfo().legalIdentities.first().name
 

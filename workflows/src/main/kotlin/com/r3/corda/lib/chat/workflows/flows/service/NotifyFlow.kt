@@ -1,7 +1,8 @@
 package com.r3.corda.lib.chat.workflows.flows.service
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.core.contracts.UniqueIdentifier
+import com.r3.corda.lib.chat.contracts.commands.ChatCommand
+import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByService
@@ -9,11 +10,11 @@ import net.corda.core.flows.StartableByService
 @InitiatingFlow
 @StartableByService
 class NotifyFlow(
-        private val chatId: UniqueIdentifier,
-        private val command: String //@todo: "command" is what to send. to refine later
+        private val chatInfo: ChatInfo,
+        private val command: ChatCommand
 ) : FlowLogic<Unit>() {
     @Suspendable
     override fun call(): Unit {
-        initiateFlow(ourIdentity).send(listOf<Any>(chatId, command))
+        initiateFlow(ourIdentity).send(listOf(chatInfo, command))
     }
 }

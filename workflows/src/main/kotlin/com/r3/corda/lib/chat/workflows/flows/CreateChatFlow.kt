@@ -65,6 +65,11 @@ class CreateChatFlow(
         //       a proposal, an agree, new message or reply message to audience.
         //       and the caller CorDapp should implement the @InitiatedBy flow to handle this.
         //       Typically, it'll setup a websocket to let UI knows the change and call API to get details
+        // @todo meantime, the caller application who receives the notification, can do extend,
+        //       i.e., parse SWIFT message:
+        //          the subject is the SWIFT code,
+        //          the message content is SWIFT body,
+        //          caller application parses the chat message and do further action based on the SWIFT code
         return signedTxn.coreTransaction.outRefsOfType<ChatInfo>().single()
     }
 }
@@ -90,7 +95,7 @@ class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<S
         serviceHub.recordTransactions(signedTxn)
 
         // notify caller app of the event, if the app is listening
-        subFlow(NotifyFlow(chatId = chatInfo.linearId, command = "Chat Created"))
+        subFlow(NotifyFlow(chatInfo = chatInfo, command = Create()))
         return signedTxn
     }
 }

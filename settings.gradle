@@ -1,5 +1,5 @@
 include 'contracts'
 include 'workflows'
-include 'examples:supplychain-webserver'
-include 'examples:supplychain-cordapp'
+include 'examples:letter-of-credit-webserver'
+include 'examples:letter-of-credit-cordapp'
 include 'examples:integrationTest'

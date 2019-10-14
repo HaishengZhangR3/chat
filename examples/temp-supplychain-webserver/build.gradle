@@ -116,13 +116,13 @@ task runPartyAServer(type: JavaExec, dependsOn: jar) {
 }
 
 bootJar {
-    baseName = "supplychain-webserver"
+    baseName = "letter-of-credit-webserver"
     version = "${supply_chain_release_version}"
 }
 
 
 sourceSets {
-    supplychain {
+    loc {
         kotlin {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
@@ -132,7 +132,7 @@ sourceSets {
 }
 
 
-task supplychainwebserver(type: Test, dependsOn: []) {
-    testClassesDirs = sourceSets.supplychain.output.classesDirs
-    classpath = sourceSets.supplychain.runtimeClasspath
+task locwebserver(type: Test, dependsOn: []) {
+    testClassesDirs = sourceSets.loc.output.classesDirs
+    classpath = sourceSets.loc.runtimeClasspath
 }

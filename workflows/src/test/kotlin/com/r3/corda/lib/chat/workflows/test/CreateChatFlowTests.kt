@@ -13,6 +13,13 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
+
+// @todo:
+// . more detailed tests are needed.
+// . simultaneously trigger of reply or add/remove or close not tested,
+// . performance test not done,
+
+
 class CreateChatFlowTests {
 
     lateinit var network: MockNetwork
