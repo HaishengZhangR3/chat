@@ -33,10 +33,10 @@ class ReplyChatFlow(
         // @todo: check everywhere for:
         //        - distinct of toList and participants
         //        - "send to list" should ***not*** include "ourIdentity"
-        val toList = (headMessage.to + headMessage.from - ourIdentity).distinct()
+        val toList = (headMessage.receivers + headMessage.sender - ourIdentity).distinct()
 
         return subFlow(SendMessageFlow(
-                to = toList,
+                receivers = toList,
                 subject = headMessage.subject,
                 content = content,
                 attachment = attachment,

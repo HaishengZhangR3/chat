@@ -30,12 +30,12 @@ class CloseChatFlow(
         val proposedCloseState = proposedCloseStateRef.state.data
 
         // need check whether all of the participants agreed already before close the chat
-        requireThat { "Only the proposer are allowed to close the chat" using (proposedCloseState.from == ourIdentity) }
+        requireThat { "Only the proposer are allowed to close the chat" using (proposedCloseState.initiator == ourIdentity) }
         if (!force) {
             CloseChatUtils.areAllCloseProposeAgreed(allCloseStateRef)
         }
 
-        val allParties = (proposedCloseState.to + proposedCloseState.from).distinct()
+        val allParties = (proposedCloseState.toAgreeParties + proposedCloseState.initiator).distinct()
         val counterParties = allParties - ourIdentity
 
         // close by consuming 1). ProposeClose and CloseAgree state, need every parties to sign and close it

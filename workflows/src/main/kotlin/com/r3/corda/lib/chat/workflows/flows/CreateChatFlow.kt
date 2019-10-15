@@ -27,20 +27,20 @@ class CreateChatFlow(
         private val subject: String,
         private val content: String,
         private val attachment: SecureHash?,
-        private val to: List<Party>
+        private val receivers: List<Party>
 ) : FlowLogic<StateAndRef<ChatInfo>>() {
 
     @Suspendable
     override fun call(): StateAndRef<ChatInfo> {
         val notary = chatVaultService.notary()
-        val toList = (to - ourIdentity).distinct()
+        val toList = (receivers - ourIdentity).distinct()
         val newChatInfo = ChatInfo(
                 linearId = UniqueIdentifier.fromString(UUID.randomUUID().toString()),
                 subject = subject,
                 content = content,
                 attachment = attachment,
-                from = ourIdentity,
-                to = toList,
+                sender = ourIdentity,
+                receivers = toList,
                 participants = listOf(ourIdentity)
         )
 

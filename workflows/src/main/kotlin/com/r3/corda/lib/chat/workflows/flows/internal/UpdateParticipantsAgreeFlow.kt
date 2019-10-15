@@ -28,11 +28,13 @@ class UpdateParticipantsAgreeFlow(
 
         val needSigns = proposeData.participants.map { it as Party }
         val counterParties = needSigns - ourIdentity
+        val agreedParties = proposeData.agreedParties.toMutableList().also { it.add(ourIdentity) }
 
         val participantsUpdate = proposeData.copy(
                 created = Instant.now(),
-                from = ourIdentity,
-                status = UpdateParticipantsStatus.AGREED
+                initiator = ourIdentity,
+                agreedParties = agreedParties,
+                status = UpdateParticipantsStatus.AGREED // @todo: only last one agreed, then "AGREED"
         )
 
         val txnBuilder = TransactionBuilder(notary = proposeState.state.notary)

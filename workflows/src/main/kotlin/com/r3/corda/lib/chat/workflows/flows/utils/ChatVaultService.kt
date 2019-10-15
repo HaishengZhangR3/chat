@@ -139,7 +139,7 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
         }
 
         if (chatQuerySpec.initiator != null) {
-            val initiatorExpression = builder { PersistentChatInfo::chatFrom.equal(chatQuerySpec.initiator) }
+            val initiatorExpression = builder { PersistentChatInfo::chatSender.equal(chatQuerySpec.initiator) }
             criteria = criteria.and(QueryCriteria.VaultCustomQueryCriteria(initiatorExpression))
         }
 

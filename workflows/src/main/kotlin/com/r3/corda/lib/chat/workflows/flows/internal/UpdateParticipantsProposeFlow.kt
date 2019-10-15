@@ -30,7 +30,7 @@ class UpdateParticipantsProposeFlow(
 
         // only the remaining parties (no new added, nor to remove) are needed to sign
         // val allParties = (headChat.to + headChat.from + toAdd - toRemove).distinct()
-        val needSigns = (headChat.to + headChat.from - toRemove).distinct()
+        val needSigns = (headChat.receivers + headChat.sender - toRemove).distinct()
         requireThat { "Cannot remove every participants." using needSigns.isNotEmpty()}
         // @todo: new added must not be in existing list
         // @todo: toRemove must be in existing list
@@ -41,9 +41,11 @@ class UpdateParticipantsProposeFlow(
         val participantsUpdate = UpdateParticipantsState(
                 linearId = chatId,
                 participants = needSigns,
-                from = ourIdentity,
+                initiator = ourIdentity,
                 toAdd = toAdd,
                 toRemove = toRemove,
+                toAgreeParties = needSigns,
+                agreedParties = mutableListOf(),
                 includingHistoryChat = includingHistoryChat
         )
 

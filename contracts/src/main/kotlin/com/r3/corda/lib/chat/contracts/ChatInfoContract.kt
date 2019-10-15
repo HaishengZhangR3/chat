@@ -1,7 +1,8 @@
 package com.r3.corda.lib.chat.contracts
 
 import com.r3.corda.lib.chat.contracts.commands.*
-import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
+import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.ChatMessageType
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.requireSingleCommand
 import net.corda.core.transactions.LedgerTransaction
@@ -12,19 +13,19 @@ class ChatInfoContract : Contract {
         val command = tx.commands.requireSingleCommand(ChatCommand::class.java)
 
         // @todo: carefully check every contract check
-        // common check
 
-        // per command check
         when (command.value) {
             is Create -> {
                 require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
+                require(command.signers.size == 1) { "There should only be one required signer for a chat: sender." }
 
-                // to list should not be empty
-                // from should not be in to list
-                // to list should not have duplicate
+                val output = tx.outputStates.single() as ChatInfo
+                require(output.receivers.isNotEmpty()) { "The receiver list should not be empty." }
+                require(!output.receivers.contains(output.sender)) { "Sender should not be in receiver list."}
+                require(output.receivers.distinct().size == output.receivers.size) { "Receiver list should not have duplicate."}
+
+                require(output.chatMessageType == ChatMessageType.USER) {"User should not create ChatMessageType.SYSTEM message."}
             }
             is Reply -> {
                 require(tx.inputStates.isEmpty()) { "There should only be one input chat state." }
@@ -38,28 +39,9 @@ class ChatInfoContract : Contract {
                 val requiredSigners = command.signers
                 require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
             }
-            is ProposeClose -> {
-                require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
-                require(tx.outputStates.size == 1) { "There should be no output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
-            }
-            is AgreeClose -> {
-                require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
-                require(tx.outputStates.size == 1) { "There should be no output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
-
-            }
-
-            is RejectClose -> {
-                require(tx.inputStates.isNotEmpty()) { "There should be more input state." }
-                require(tx.outputStates.isEmpty()) { "There should be no output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.isNotEmpty()) { "There should be more than one required signer for a chat: from and to list." }
-
-            }
+            // @todo: Close should consume "ChatInfo" and "CLoseChatState",
+            // @todo: add a ShutDown command to only consume "ChatInfo"
             is Close -> {
                 require(tx.inputStates.size >= 1) { "There should be more than one input chat state." }
                 require(tx.outputStates.size == 0) { "There should be no output chat state." }
@@ -68,38 +50,6 @@ class ChatInfoContract : Contract {
 
             }
 
-            is ProposeUpdateParticipants -> {
-                require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
-                require(tx.outputStates.size == 1) { "There should only be one output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.isNotEmpty()) { "There should more one required signer for a chat: from and to list." }
-
-                val outputState = tx.outputStates.single() as UpdateParticipantsState
-                require(outputState.toAdd.isNotEmpty() || outputState.toRemove.isNotEmpty()) { "One of ToAdd or ToRemove should not be empty"}
-                require(outputState.toAdd.distinct().size == outputState.toAdd.size) { "toAdd list should not have duplicate"}
-
-                require(outputState.toRemove.distinct().size == outputState.toRemove.size) { "toAdd list should not have duplicate"}
-
-                require(outputState.toAdd.intersect(outputState.toRemove).isEmpty()) { "ToAdd should not overlap with ToRemove"}
-
-            }
-            is RejectUpdateParticipants -> {
-                require(tx.inputStates.isNotEmpty()) { "There should be more input chat state." }
-                require(tx.outputStates.isEmpty()) { "There should be no output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.isNotEmpty()) { "There should more one required signer for a chat: from and to list." }
-            }
-            is AgreeUpdateParticipants -> {
-                require(tx.inputStates.isEmpty()) { "There should only be one input chat state." }
-                require(tx.outputStates.size == 1) { "There should only be one output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.isNotEmpty()) { "There should more one required signer for a chat: from and to list." }
-            }
-            is UpdateParticipants -> {
-                val requiredSigners = command.signers
-                require(requiredSigners.isNotEmpty()) { "There should be more than one required signer for a chat: from and to list." }
-
-            }
             else -> {
                 throw NotSupportedException()
             }

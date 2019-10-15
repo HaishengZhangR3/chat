@@ -25,15 +25,17 @@ class CloseChatAgreeFlow(
         val allCloseStateRef = CloseChatUtils.getAllCloseStates(this, chatId)
         val proposedCloseStateRef = CloseChatUtils.getCloseProposeState(allCloseStateRef)
         val proposedCloseState = proposedCloseStateRef.state.data
-        requireThat { "Don't need to agree on the proposal you raised." using (proposedCloseState.from != ourIdentity) }
+        requireThat { "Don't need to agree on the proposal you raised." using (proposedCloseState.initiator != ourIdentity) }
 
-        val allParties = (proposedCloseState.to + proposedCloseState.from).distinct()
+        val allParties = (proposedCloseState.toAgreeParties + proposedCloseState.initiator).distinct()
         val counterParties = allParties - ourIdentity
+        val agreedParties = proposedCloseState.agreedParties.toMutableList().also { it.add(ourIdentity) }
 
         val proposeState = CloseChatState(
                 linearId = chatId,
-                from = ourIdentity,
-                to = allParties,
+                initiator = ourIdentity,
+                toAgreeParties = allParties,
+                agreedParties = agreedParties,
                 status = CloseChatStatus.AGREED,
                 participants = allParties
         )

@@ -102,7 +102,7 @@ class ChatParticipants(private val chatId: UniqueIdentifier) : FlowLogic<List<Pa
     @Suspendable
     override fun call(): List<Party> {
         val headMessage = chatVaultService.getHeadMessage(chatId)
-        return headMessage.state.data.let { it.to + it.from }.distinct()
+        return headMessage.state.data.let { it.receivers + it.sender }.distinct()
     }
 }
 

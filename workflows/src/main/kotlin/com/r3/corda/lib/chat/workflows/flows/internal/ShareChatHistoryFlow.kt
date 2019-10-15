@@ -14,12 +14,12 @@ import net.corda.core.utilities.unwrap
 @StartableByService
 class ShareChatHistoryFlow(
         private val chatId: UniqueIdentifier,
-        private val to: List<Party>
+        private val receivers: List<Party>
 ) : FlowLogic<Unit>() {
     @Suspendable
     override fun call(): Unit {
         val historyMessages = chatVaultService.getAllMessages(chatId).map { it.state.data }
-        to.map { initiateFlow(it).send(historyMessages) }
+        receivers.map { initiateFlow(it).send(historyMessages) }
     }
 }
 

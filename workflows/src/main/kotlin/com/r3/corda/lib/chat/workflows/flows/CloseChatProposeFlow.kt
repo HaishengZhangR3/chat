@@ -24,13 +24,14 @@ class CloseChatProposeFlow(
         val headMessageStateRef = chatVaultService.getHeadMessage(chatId)
         val headMessage = headMessageStateRef.state.data
 
-        val allParties = (headMessage.to + headMessage.from + ourIdentity).distinct()
+        val allParties = (headMessage.receivers + headMessage.sender + ourIdentity).distinct()
         val counterParties = allParties - ourIdentity
 
         val proposeState = CloseChatState(
                 linearId = chatId,
-                from = ourIdentity,
-                to = allParties,
+                initiator = ourIdentity,
+                toAgreeParties = allParties,
+                agreedParties = mutableListOf(),
                 participants = allParties
         )
         val txnBuilder = TransactionBuilder(headMessageStateRef.state.notary)

@@ -53,7 +53,7 @@ object CloseChatUtils {
             requireThat { "There should be not rejection." using (rejected == 0) }
 
             val proposedState = it.single { it.status == CloseChatStatus.PROPOSED }
-            val partyAmount = proposedState.to.size - 1 // proposer agreed by default
+            val partyAmount = proposedState.toAgreeParties.size - 1 // proposer agreed by default
             val agreed = it.filter { it.status == CloseChatStatus.AGREED }.size
             requireThat { "Not all participants agreed." using (partyAmount == agreed) }
         }

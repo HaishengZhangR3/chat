@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.Reply
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.ChatMessageType
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
@@ -21,10 +22,11 @@ import net.corda.core.utilities.unwrap
 @StartableByRPC
 class SendMessageFlow(
         private val chatId: UniqueIdentifier,
-        private val to: List<Party>,
-        private val subject: String,
+        private val receivers: List<Party>,
+        private val subject: String = "",
         private val content: String = "",
-        private val attachment: SecureHash? = null
+        private val attachment: SecureHash? = null,
+        private val chatMessageType: ChatMessageType = ChatMessageType.USER
 ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
@@ -36,9 +38,10 @@ class SendMessageFlow(
                 subject = subject,
                 content = content,
                 attachment = attachment,
-                from = ourIdentity,
-                to = to,
-                participants = listOf(ourIdentity)
+                sender = ourIdentity,
+                receivers = receivers,
+                participants = listOf(ourIdentity),
+                chatMessageType = chatMessageType
         )
 
         val txnBuilder = TransactionBuilder(notary = headMessageState.state.notary)
@@ -50,7 +53,7 @@ class SendMessageFlow(
                 }
 
         // reply message will send to "to" list.
-        to.map { initiateFlow(it).send(outputChatInfo) }
+        receivers.map { initiateFlow(it).send(outputChatInfo) }
 
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)

@@ -66,7 +66,7 @@ class SendMessageFlowTests {
                 SendMessageFlow(
                         subject = "subjectxxx",
                         content = "contentxxx",
-                        to = listOf(nodeA.info.legalIdentities.single()),
+                        receivers = listOf(nodeA.info.legalIdentities.single()),
                         chatId = newChatInfo.linearId
                 )
         )

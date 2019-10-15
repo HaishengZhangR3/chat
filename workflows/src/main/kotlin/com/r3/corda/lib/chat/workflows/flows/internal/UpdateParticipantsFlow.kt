@@ -2,6 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.UpdateParticipants
+import com.r3.corda.lib.chat.contracts.states.ChatMessageType
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
@@ -29,7 +30,7 @@ class UpdateParticipantsFlow(
         val proposeData = proposeState.state.data
 
         // @todo: updating should not be allowed if there is no propose
-        requireThat { "Only the proposer are allowed to close the chat" using (proposeData.from == ourIdentity) }
+        requireThat { "Only the proposer are allowed to close the chat" using (proposeData.initiator == ourIdentity) }
         if (!force) {
             areAllUpdateProposeAgreed(allUpdateStateRef)
         }
@@ -42,7 +43,7 @@ class UpdateParticipantsFlow(
         subFlow(ShutDownChatFlow(chatId = chatId, toList = proposeData.toRemove))
 
         // 3. share history messages to toAdd (subflow), no need sign
-        subFlow(ShareChatHistoryFlow(chatId = proposeData.linearId, to = proposeData.toAdd))
+        subFlow(ShareChatHistoryFlow(chatId = proposeData.linearId, receivers = proposeData.toAdd))
 
         // 4. notice with a new txn output = chatInfo whose toList == old toList + toAdd - toRemove, need all sign
         return updateParticipants(proposeData)
@@ -69,12 +70,12 @@ class UpdateParticipantsFlow(
     @Suspendable
     private fun updateParticipants(proposeData: UpdateParticipantsState): SignedTransaction {
         val headChat = chatVaultService.getHeadMessage(chatId).state.data
-        val toList = (headChat.to + headChat.from + proposeData.toAdd - proposeData.toRemove - ourIdentity).distinct()
+        val toList = (headChat.receivers + headChat.sender + proposeData.toAdd - proposeData.toRemove - ourIdentity).distinct()
 
         return subFlow(SendMessageFlow(
-                to = toList,
-                subject = headChat.subject,
-                chatId = chatId
+                receivers = toList,
+                chatId = chatId,
+                chatMessageType = ChatMessageType.SYSTEM
         ))
     }
 
