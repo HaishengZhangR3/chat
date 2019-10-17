@@ -103,6 +103,7 @@ class UpdateParticipantsFlowResponder(val otherSession: FlowSession): FlowLogic<
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
+                // no log, since the log is SendMessageResponder.
             }
         }
         val signTxn = subFlow(transactionSigner)

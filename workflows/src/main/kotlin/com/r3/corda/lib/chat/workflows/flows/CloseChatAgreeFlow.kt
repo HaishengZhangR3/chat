@@ -60,6 +60,11 @@ class CloseChatFlowAgreeResponder(val otherSession: FlowSession): FlowLogic<Sign
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction): Unit {
+                val close = stx.tx.outputStates.single() as CloseChatState
+                println("""
+                    | Got close chat agreement: ${close}.
+                    | If all agreed, please do final close.
+                """.trimMargin())
             }
         }
         val signTxn = subFlow(transactionSigner)

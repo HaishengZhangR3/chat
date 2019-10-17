@@ -2,6 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.RejectUpdateParticipants
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
@@ -48,6 +49,8 @@ class UpdateParticipantsRejectFlowResponder(val otherSession: FlowSession): Flow
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction): Unit {
+                val update = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as UpdateParticipantsState
+                println("Update participants request is rejected: ${update}.")
             }
         }
         val signTxn = subFlow(transactionSigner)

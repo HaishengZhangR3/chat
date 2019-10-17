@@ -83,6 +83,8 @@ class SendMessageFlowResponder(private val flowSession: FlowSession) : FlowLogic
 
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
+
+        println("Receiving replied message or participants updating message: $chatInfo")
         return signedTxn
     }
 }

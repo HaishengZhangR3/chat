@@ -55,6 +55,11 @@ class CloseChatProposeFlowResponder(val otherSession: FlowSession): FlowLogic<Si
 
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction): Unit {
+                val close = stx.tx.outputStates.single() as CloseChatState
+                println("""
+                    | Got close chat proposal: ${close}.
+                    | please agree.
+                """.trimMargin())
             }
         }
         val signTxn = subFlow(transactionSigner)

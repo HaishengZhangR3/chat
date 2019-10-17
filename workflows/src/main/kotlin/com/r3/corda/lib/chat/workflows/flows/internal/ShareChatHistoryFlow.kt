@@ -28,7 +28,11 @@ class ShareChatHistoryFlowResponder(private val otherSession: FlowSession) : Flo
     @Suspendable
     override fun call(): Unit {
         val historyMessages = otherSession.receive<List<ChatInfo>>().unwrap { it }
+
+        println("Receiving history chat messages:")
         val signedTxns = historyMessages.map {
+            println("$it")
+
             val txnBuilder = TransactionBuilder(notary = chatVaultService.notary())
                     // no input
                     .addOutputState( it.copy(participants = listOf(ourIdentity)) )

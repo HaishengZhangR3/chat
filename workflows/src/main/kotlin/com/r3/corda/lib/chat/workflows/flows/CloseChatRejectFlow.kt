@@ -2,6 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.RejectClose
+import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.workflows.flows.utils.CloseChatUtils
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
@@ -47,6 +48,8 @@ class CloseChatRejectFlowResponder(val otherSession: FlowSession): FlowLogic<Sig
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction): Unit {
+                val closeChatState = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as CloseChatState
+                println("Close request is rejected: ${closeChatState}.")
             }
         }
         val signTxn = subFlow(transactionSigner)
