@@ -14,6 +14,10 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 import java.util.*
+import net.corda.core.utilities.ProgressTracker
+import net.corda.core.utilities.ProgressTracker.Step;
+
+
 
 /**
  * A flow to create a new chat.
@@ -79,6 +83,20 @@ class CreateChatFlow(
  */
 @InitiatedBy(CreateChatFlow::class)
 class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<SignedTransaction>() {
+
+    companion object {
+        object RECEIVING : Step("Sending data between parties.")
+        object SIGNING : Step("Responding to CollectSignaturesFlow.")
+        object FINALISATION : Step("Finalising a transaction.")
+
+        fun tracker() = ProgressTracker(
+                RECEIVING,
+                SIGNING,
+                FINALISATION
+        )
+    }
+    override val progressTracker: ProgressTracker = tracker()
+
     @Suspendable
     override fun call(): SignedTransaction {
 
@@ -86,16 +104,22 @@ class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<S
 
         // "receive" a message, then save to vault.
         val chatInfo = flowSession.receive<ChatInfo>().unwrap{ it }
+        progressTracker.currentStep = RECEIVING
+
         val txnBuilder = TransactionBuilder(notary = notary)
                 .addOutputState(chatInfo.copy(participants = listOf(ourIdentity)))
                 .addCommand(Create(), listOf(ourIdentity.owningKey))
                 .also { it.verify(serviceHub) }
 
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
+        progressTracker.currentStep = SIGNING
+
         serviceHub.recordTransactions(signedTxn)
 
         // notify caller app of the event, if the app is listening
         subFlow(NotifyFlow(chatInfo = chatInfo, command = Create()))
+
+        progressTracker.currentStep = FINALISATION
         return signedTxn
     }
 }

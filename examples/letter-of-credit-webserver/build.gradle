@@ -104,7 +104,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         ]
     }
     node {
-        name "O=PartyA,L=London,C=GB"
+        name "O=Durr,L=London,C=GB"
         p2pPort 10005
         sshdPort 2222
         rpcSettings {
@@ -119,7 +119,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         ]
     }
     node {
-        name "O=Agent,L=London,C=GB"
+        name "O=Daimler,L=London,C=GB"
         p2pPort 10010
         sshdPort 2223
         rpcSettings {
@@ -133,33 +133,40 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
                 ]
         ]
     }
-//    node {
-//        name "O=FundManager1,L=New York,C=US"
-//        p2pPort 10015
-//        sshdPort 2224
-//        webPort 50002
-//        rpcSettings {
-//            address("localhost:10016")
-//            adminAddress("localhost:10048")
-//        }
-//        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
-//    }
-//    node {
-//        name "O=FundManager2,L=Paris,C=FR"
-//        p2pPort 10020
-//        sshdPort 2225
-//        webPort 50003
-//        rpcSettings {
-//            address("localhost:10021")
-//            adminAddress("localhost:10049")
-//        }
-//        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
-//    }
+    node {
+        name "O=DurrBank,L=New York,C=US"
+        p2pPort 10015
+        sshdPort 2224
+        rpcSettings {
+            address("localhost:10016")
+            adminAddress("localhost:10048")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+        extraConfig = [
+                custom: [
+                        jvmArgs: ["-Xmx4g", "-XX:+UseG1GC"]
+                ]
+        ]
+    }
+    node {
+        name "O=DaimlerBank,L=Paris,C=FR"
+        p2pPort 10020
+        sshdPort 2225
+        rpcSettings {
+            address("localhost:10021")
+            adminAddress("localhost:10049")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+        extraConfig = [
+                custom: [
+                        jvmArgs: ["-Xmx4g", "-XX:+UseG1GC"]
+                ]
+        ]
+    }
 //    node {
 //        name "O=Administrator1,L=Paris,C=FR"
 //        p2pPort 10025
 //        sshdPort 2226
-//        webPort 50004
 //        rpcSettings {
 //            address("localhost:10026")
 //            adminAddress("localhost:10050")
