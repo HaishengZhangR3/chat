@@ -16,6 +16,14 @@ import java.time.Instant
 
 typealias ChatID = UniqueIdentifier
 
+
+@CordaSerializable
+sealed class ChatStatus {
+    object ACTIVE : ChatStatus()
+    object CLOSING : ChatStatus()
+    object CLOSED : ChatStatus()
+}
+
 @CordaSerializable
 sealed class ChatMessageType {
     object USER : ChatMessageType()     // user generated chat message
@@ -32,6 +40,7 @@ data class ChatInfo(
         val attachment: SecureHash? = null,
         val sender: Party,
         val receivers: List<Party>,
+        val status: ChatStatus = ChatStatus.ACTIVE,
         val chatMessageType: ChatMessageType = ChatMessageType.USER
 ) : ChatBaseState, QueryableState {
 
