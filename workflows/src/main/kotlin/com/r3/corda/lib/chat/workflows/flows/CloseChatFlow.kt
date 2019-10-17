@@ -65,9 +65,10 @@ class CloseChatFlowResponder(val otherSession: FlowSession) : FlowLogic<SignedTr
 
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             override fun checkTransaction(stx: SignedTransaction): Unit {
-
                 val closeChatState = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as CloseChatState
                 CloseChatUtils.closeChat(this, closeChatState.linearId, listOf(ourIdentity.owningKey))
+
+                println("Chat is closed: ${closeChatState}.")
             }
         }
         val signTxn = subFlow(transactionSigner)

@@ -28,5 +28,6 @@ class ShutDownChatFlowResponder(val otherSession: FlowSession): FlowLogic<Unit>(
     override fun call(): Unit {
         val chatId = otherSession.receive<ChatID>().unwrap { it }
         CloseChatUtils.closeChat(this, chatId, listOf(ourIdentity.owningKey))
+        println("I'm closed: $chatId, maybe because I'm removed from chat thread.")
     }
 }

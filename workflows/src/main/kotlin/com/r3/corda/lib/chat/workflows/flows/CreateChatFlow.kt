@@ -79,6 +79,7 @@ class CreateChatFlow(
  */
 @InitiatedBy(CreateChatFlow::class)
 class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<SignedTransaction>() {
+
     @Suspendable
     override fun call(): SignedTransaction {
 
@@ -96,6 +97,8 @@ class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<S
 
         // notify caller app of the event, if the app is listening
         subFlow(NotifyFlow(chatInfo = chatInfo, command = Create()))
+
+        println("Received message from a new created chat thread: ${chatInfo}.")
         return signedTxn
     }
 }

@@ -2,6 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.AgreeUpdateParticipants
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
@@ -58,6 +59,11 @@ class UpdateParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowL
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
+                val update = stx.tx.outputStates.single() as UpdateParticipantsState
+                println("""
+                    | Got update participants agreement: ${update}.
+                    | If all agreed, please do final updating.
+                """.trimMargin())
             }
         }
         val signTxn = subFlow(transactionSigner)
