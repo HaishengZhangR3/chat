@@ -2,85 +2,90 @@ package com.r3.demo.chatapi
 
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.workflows.flows.*
 import com.r3.corda.lib.chat.workflows.flows.service.*
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
-import net.corda.core.identity.CordaX500Name
+import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.Party
-import net.corda.core.internal.concurrent.transpose
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
+import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.getOrThrow
-import net.corda.testing.common.internal.testNetworkParameters
-import net.corda.testing.driver.DriverParameters
-import net.corda.testing.driver.NodeHandle
-import net.corda.testing.driver.NodeParameters
-import net.corda.testing.driver.driver
-import net.corda.testing.node.TestCordapp
-import org.junit.Assert
-import org.junit.Test
-import java.time.Instant
-
 
 class ChatApi {
 
     companion object {
         private val log = contextLogger()
     }
+
     lateinit var proxy: CordaRPCOps
 
-    public fun connect(host: String,
-                       username: String,
-                       password: String,
-                       rpcPort: Int) {
-        val nodeRPCConnection = NodeRPCConnection(host, username, password, rpcPort)
-        proxy = nodeRPCConnection.proxy
-
+    fun init(newProxy: CordaRPCOps) {
+        proxy = newProxy
     }
 
-    private fun createChat( toList: List<Party>, any: String): ChatInfo {
+    fun init(host: String, username: String, password: String, rpcPort: Int) {
+        val nodeRPCConnection = NodeRPCConnection(host, username, password, rpcPort)
+        proxy = nodeRPCConnection.proxy
+    }
+
+    fun createChat(subject: String, content: String, attachment: SecureHash? = null, receivers: List<Party>): ChatInfo {
+
+        log.warn("***** createChat *****")
         val createChat = proxy.startFlow(
                 ::CreateChatFlow,
-                "Sample Topic $any",
-                "Some sample content created $any",
-                null,
-                toList
+                subject,
+                content,
+                attachment,
+                receivers
         ).returnValue.getOrThrow()
         return createChat.state.data
     }
 
-    private fun replyChat(chatId: UniqueIdentifier, any: String): ChatInfo {
+    fun replyChat(chatId: UniqueIdentifier, content: String, attachment: SecureHash? = null): ChatInfo {
+        log.warn("***** replyChat *****")
         val replyChat = proxy.startFlow(
                 ::ReplyChatFlow,
                 chatId,
-                "Some sample content replied $any",
-                null
+                content,
+                attachment
         ).returnValue.getOrThrow()
-
         return replyChat.coreTransaction.outputStates.single() as ChatInfo
     }
 
-    private fun closeChat(agreeer: List<NodeHandle>, chatId: UniqueIdentifier): Any {
-        log.warn("***** Propose close *****")
+    fun proposeCloseChat(chatId: UniqueIdentifier): CloseChatState {
+        log.warn("***** proposeCloseChat *****")
         val propose = proxy.startFlow(
                 ::CloseChatProposeFlow,
                 chatId
         ).returnValue.getOrThrow()
+        return propose.coreTransaction.outputStates.single() as CloseChatState
+    }
 
-        // @todo: call ChatCloseProposal to get close proposal and check
+    fun agreeCloseChat(chatId: UniqueIdentifier): CloseChatState {
+        log.warn("***** agreeCloseChat *****")
+        val agree = proxy.startFlow(
+                ::CloseChatAgreeFlow,
+                chatId
+        ).returnValue.getOrThrow()
+        return agree.coreTransaction.outputStates.single() as CloseChatState
+    }
 
-        log.warn("***** Close proposal agreed *****")
-        val agree = agreeer.map {
-            it.rpc.startFlow(
-                    ::CloseChatAgreeFlow,
-                    chatId
-            ).returnValue.getOrThrow()
-        }
+    fun rejectCloseChat(chatId: UniqueIdentifier): SignedTransaction {
+        log.warn("***** agreeCloseChat *****")
+        val reject = proxy.startFlow(
+                ::CloseChatRejectFlow,
+                chatId
+        ).returnValue.getOrThrow()
+        return reject
+    }
 
-        log.warn("***** Do final close *****")
-        val doIt = proposer.rpc.startFlow(
+    fun closeChat(chatId: UniqueIdentifier): SignedTransaction {
+        log.warn("***** closeChat *****")
+        val doIt = proxy.startFlow(
                 ::CloseChatFlow,
                 chatId,
                 false
@@ -89,92 +94,157 @@ class ChatApi {
         return doIt
     }
 
-    private fun addParticipantsToChat(proposer: NodeHandle, agreeer: List<NodeHandle>, toAdd: List<Party>, chatId: UniqueIdentifier): Any {
-        log.warn("***** Propose add *****")
-        val propose = proposer.rpc.startFlow(
+    fun proposeAddParticipants(toAdd: List<Party>, chatId: UniqueIdentifier): UpdateParticipantsState {
+        log.warn("***** proposeAddParticipants *****")
+        val propose = proxy.startFlow(
                 ::AddParticipantsProposeFlow,
                 chatId,
                 toAdd,
                 true
         ).returnValue.getOrThrow()
+        return propose.coreTransaction.outputStates.single() as UpdateParticipantsState
+    }
 
-        log.warn("***** Add proposal agreed *****")
-        val agree = agreeer.map {
-            it.rpc.startFlow(
+    fun agreeAddParticipants(toAdd: List<Party>, chatId: UniqueIdentifier): UpdateParticipantsState {
+        log.warn("***** agreeAddParticipants *****")
+        val agree = proxy.startFlow(
                     ::AddParticipantsAgreeFlow,
                     chatId
             ).returnValue.getOrThrow()
-        }
+        return agree.coreTransaction.outputStates.single() as UpdateParticipantsState
+    }
 
-        log.warn("***** Do final add *****")
-        val doIt = proposer.rpc.startFlow(
+    fun rejectAddParticipants(toAdd: List<Party>, chatId: UniqueIdentifier): SignedTransaction {
+        log.warn("***** rejectAddParticipants *****")
+        val reject = proxy.startFlow(
+                    ::AddParticipantsRejectFlow,
+                    chatId
+            ).returnValue.getOrThrow()
+        return reject
+    }
+
+    fun addParticipants(toAdd: List<Party>, chatId: UniqueIdentifier): SignedTransaction {
+        log.warn("***** addParticipants *****")
+        val doIt = proxy.startFlow(
                 ::AddParticipantsFlow,
                 chatId
         ).returnValue.getOrThrow()
-
         return doIt
     }
 
-    private fun getAllChatIDs(node: NodeHandle): List<UniqueIdentifier> {
+    fun proposeRemoveParticipants(toRemove: List<Party>, chatId: UniqueIdentifier): UpdateParticipantsState {
+        log.warn("***** proposeRemoveParticipants *****")
+        val propose = proxy.startFlow(
+                ::RemoveParticipantsProposeFlow,
+                chatId,
+                toRemove
+        ).returnValue.getOrThrow()
+        return propose.coreTransaction.outputStates.single() as UpdateParticipantsState
+    }
+
+    fun agreeRemoveParticipants(toRemove: List<Party>, chatId: UniqueIdentifier): UpdateParticipantsState {
+        log.warn("***** agreeRemoveParticipants *****")
+        val agree = proxy.startFlow(
+                ::RemoveParticipantsAgreeFlow,
+                chatId
+        ).returnValue.getOrThrow()
+        return agree.coreTransaction.outputStates.single() as UpdateParticipantsState
+    }
+
+    fun rejectRemoveParticipants(toRemove: List<Party>, chatId: UniqueIdentifier): SignedTransaction {
+        log.warn("***** rejectRemoveParticipants *****")
+        val reject = proxy.startFlow(
+                ::RemoveParticipantsRejectFlow,
+                chatId
+        ).returnValue.getOrThrow()
+        return reject
+    }
+
+    fun removeParticipants(toRemove: List<Party>, chatId: UniqueIdentifier): SignedTransaction {
+        log.warn("***** removeParticipants *****")
+        val doIt = proxy.startFlow(
+                ::RemoveParticipantsFlow,
+                chatId
+        ).returnValue.getOrThrow()
+        return doIt
+    }
+
+    fun getAllChatIDs(): List<UniqueIdentifier> {
         log.warn("***** All chatIDs *****")
-        val allChatIDsFromVault = node.rpc.startFlow(
+        val allChatIDsFromVault = proxy.startFlow(
                 ::AllChatIDs
         ).returnValue.getOrThrow()
         return allChatIDsFromVault
     }
 
-    private fun getAllChats(node: NodeHandle): List<StateAndRef<ChatInfo>> {
+    fun getAllChats(): List<StateAndRef<ChatInfo>> {
         log.warn("***** All chats and messages *****")
-        val allChatsFromVault = node.rpc.startFlow(
+        val allChatsFromVault = proxy.startFlow(
                 ::AllChats
         ).returnValue.getOrThrow()
         return allChatsFromVault
-
     }
 
-    private fun getAllChatsBy(node: NodeHandle, querySpec: ChatQuerySpec): List<StateAndRef<ChatInfo>> {
+    fun getAllChatsBy(querySpec: ChatQuerySpec): List<StateAndRef<ChatInfo>> {
         log.warn("***** All chats and messages with filter $querySpec applied *****")
-        val allChatsFromVault = node.rpc.startFlow(
+        val allChatsFromVault = proxy.startFlow(
                 ::AllChatsBy,
                 querySpec
         ).returnValue.getOrThrow()
         return allChatsFromVault
     }
 
-    private fun getChatAllMessages(node: NodeHandle, chatId: UniqueIdentifier): List<StateAndRef<ChatInfo>> {
+    fun getChatAllMessages(chatId: UniqueIdentifier): List<StateAndRef<ChatInfo>> {
         log.warn("***** All messages for one single chat by ID: $chatId *****")
-        val chatAllMessagesFromVault = node.rpc.startFlow(
+        val chatAllMessagesFromVault = proxy.startFlow(
                 ::ChatAllMessages,
                 chatId
         ).returnValue.getOrThrow()
         return chatAllMessagesFromVault
     }
 
-    private fun getChatMessagesBy(node: NodeHandle, querySpec: ChatQuerySpec): List<StateAndRef<ChatInfo>> {
+    fun getChatMessagesBy(querySpec: ChatQuerySpec): List<StateAndRef<ChatInfo>> {
         log.warn("***** All messages for one single chat with filter $querySpec applied *****")
-        val chatAllMessagesFromVault = node.rpc.startFlow(
+        val chatAllMessagesFromVault = proxy.startFlow(
                 ::ChatAllMessagesBy,
                 querySpec
         ).returnValue.getOrThrow()
         return chatAllMessagesFromVault
     }
 
-    private fun getChatCurrentStatus(node: NodeHandle, chatId: UniqueIdentifier): ChatStatus {
+    fun getChatCurrentStatus(chatId: UniqueIdentifier): ChatStatus {
         log.warn("***** chat status: active, close proposed, closed for one chat by ID *****")
-        val chatStatusFromVault = node.rpc.startFlow(
+        val chatStatusFromVault = proxy.startFlow(
                 ::ChatCurrentStatus,
                 chatId
         ).returnValue.getOrThrow()
         return chatStatusFromVault
     }
 
-    private fun getChatParticipants(node: NodeHandle, chatId: UniqueIdentifier): List<Party> {
+    fun getChatParticipants(chatId: UniqueIdentifier): List<Party> {
         log.warn("***** All participants for one chat by ID *****")
-        val chatParticipantsFromVault = node.rpc.startFlow(
+        val chatParticipantsFromVault = proxy.startFlow(
                 ::ChatParticipants,
                 chatId
         ).returnValue.getOrThrow()
         return chatParticipantsFromVault
     }
 
+    fun getChatCloseProposal(chatId: UniqueIdentifier): CloseChatState {
+        log.warn("***** getChatCloseProposal for one chat by ID *****")
+        val closeProposalFromVault = proxy.startFlow(
+                ::ChatCloseProposal,
+                chatId
+        ).returnValue.getOrThrow()
+        return closeProposalFromVault
+    }
+
+    fun getChatUpdateParticipantsProposal(chatId: UniqueIdentifier): UpdateParticipantsState {
+        log.warn("***** getChatUpdateParticipantsProposal for one chat by ID *****")
+        val proposalFromVault = proxy.startFlow(
+                ::ChatUpdateParticipantsProposal,
+                chatId
+        ).returnValue.getOrThrow()
+        return proposalFromVault
+    }
 }

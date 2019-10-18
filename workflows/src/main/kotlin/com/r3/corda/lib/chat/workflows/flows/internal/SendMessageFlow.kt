@@ -20,6 +20,7 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
+// @todo: go through all of the flows, some of them should not be exposed to RPC public
 class SendMessageFlow(
         private val chatId: UniqueIdentifier,
         private val receivers: List<Party>,
