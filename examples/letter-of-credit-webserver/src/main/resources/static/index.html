@@ -7,11 +7,12 @@
 <div id="messages"></div>
 
 <script>
-let url = location.host == 'localhost' ?
-  'ws://localhost:8080/ws' : location.host == 'javascript.local' ?
-  `ws://javascript.local/article/websocket/chat/ws` : // dev integration with local site
-  `wss://javascript.info/article/websocket/chat/ws`; // prod integration with javascript.info
+<!--let url = location.host == 'localhost' ?-->
+<!--  'ws://localhost:10006/ws' : location.host == 'javascript.local' ?-->
+<!--  `ws://javascript.local/article/websocket/chat/ws` : // dev integration with local site-->
+<!--  `wss://javascript.info/article/websocket/chat/ws`; // prod integration with javascript.info-->
 
+let url = 'ws://localhost:19999'
 let socket = new WebSocket(url);
 
 // send message from the form
