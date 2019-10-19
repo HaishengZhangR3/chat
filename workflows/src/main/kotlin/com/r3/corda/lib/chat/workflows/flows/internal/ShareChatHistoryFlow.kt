@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.ShareHistory
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
@@ -41,5 +42,8 @@ class ShareChatHistoryFlowResponder(private val otherSession: FlowSession) : Flo
             serviceHub.signInitialTransaction(txnBuilder)
         }
         serviceHub.recordTransactions(signedTxns)
+
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = historyMessages, command = ShareHistory()))
     }
 }

@@ -11,15 +11,27 @@ import org.slf4j.Logger
 import java.io.File
 import java.net.InetSocketAddress
 import java.time.Instant
+import java.util.*
+
 
 // refer code from:
 // https://github.com/TooTallNate/Java-WebSocket/blob/master/src/main/example/ChatServer.java
 @CordaService
 class WSService(val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
 
-	val wsServer = WSServer(19999)
+	var wsServer: WSServer
 	init {
+		val org = serviceHub.myInfo.legalIdentitiesAndCerts.single().party.name.organisation
+		val port: Int = loadPort("${org}.webSocketPort")
+		wsServer = WSServer(port)
 		wsServer.start()
+	}
+
+	private fun loadPort(item: String): Int {
+		val file = WSService::class.java.classLoader.getResourceAsStream("application.properties")
+		val prop = Properties()
+		prop.load(file)
+		return prop.getProperty(item).toInt()
 	}
 }
 
@@ -65,6 +77,6 @@ class WSServer : WebSocketServer {
 	}
 
 	private fun logIt(message: String){
-		File(file).appendText("web socket log: $message")
+		File(file).appendText("web socket [${port}] log: $message")
 	}
 }

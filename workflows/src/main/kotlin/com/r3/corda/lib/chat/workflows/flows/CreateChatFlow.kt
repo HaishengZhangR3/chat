@@ -3,7 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.Create
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.workflows.flows.service.NotifyFlow
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -58,6 +58,9 @@ class CreateChatFlow(
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
 
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = newChatInfo, command = Create()))
+
         // @todo this is a very important step: to notice the caller CorDapp that we have a new msg
         //       doing this can be achieved by observer mode (notify to whom should know), refer to:
         //              https://github.com/roger3cev/observable-states
@@ -95,9 +98,8 @@ class CreateChatFlowResponder(private val flowSession: FlowSession): FlowLogic<S
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
 
-        // notify caller app of the event, if the app is listening
-        subFlow(NotifyFlow(chatInfo = chatInfo, command = Create()))
-
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = chatInfo, command = Create()))
         println("Received message from a new created chat thread: ${chatInfo}.")
         return signedTxn
     }

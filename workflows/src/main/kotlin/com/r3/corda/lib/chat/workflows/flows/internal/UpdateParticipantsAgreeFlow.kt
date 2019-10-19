@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.AgreeUpdateParticipants
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
@@ -47,6 +48,10 @@ class UpdateParticipantsAgreeFlow(
         val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
         val counterPartySessions = counterParties.map{ initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
+
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = participantsUpdate, command = AgreeUpdateParticipants()))
+
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
 }
@@ -64,6 +69,9 @@ class UpdateParticipantsAgreeFlowResponder(val otherSession: FlowSession): FlowL
                     | Got update participants agreement: ${update}.
                     | If all agreed, please do final updating.
                 """.trimMargin())
+
+                // notify observers (including myself), if the app is listening
+                subFlow(ChatNotifyFlow(info = update, command = AgreeUpdateParticipants()))
             }
         }
         val signTxn = subFlow(transactionSigner)

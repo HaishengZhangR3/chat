@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.RejectClose
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.CloseChatUtils
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
@@ -38,6 +39,8 @@ class CloseChatRejectFlow(
         val counterPartySessions = counterParties.map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
 
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = headState, command = RejectClose()))
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
 }
@@ -47,9 +50,13 @@ class CloseChatRejectFlowResponder(val otherSession: FlowSession): FlowLogic<Sig
     @Suspendable
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
+            @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
                 val closeChatState = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as CloseChatState
                 println("Close request is rejected: ${closeChatState}.")
+
+                // notify observers (including myself), if the app is listening
+                subFlow(ChatNotifyFlow(info = closeChatState, command = RejectClose()))
             }
         }
         val signTxn = subFlow(transactionSigner)

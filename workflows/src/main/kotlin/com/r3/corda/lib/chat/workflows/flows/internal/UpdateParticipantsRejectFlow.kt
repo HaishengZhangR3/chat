@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.RejectUpdateParticipants
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
@@ -39,6 +40,9 @@ class UpdateParticipantsRejectFlow(
         val counterPartySessions = counterParties.map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
 
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = proposeState, command = RejectUpdateParticipants()))
+
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
 }
@@ -48,9 +52,13 @@ class UpdateParticipantsRejectFlowResponder(val otherSession: FlowSession): Flow
     @Suspendable
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
+            @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
                 val update = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as UpdateParticipantsState
                 println("Update participants request is rejected: ${update}.")
+
+                // notify observers (including myself), if the app is listening
+                subFlow(ChatNotifyFlow(info = update, command = RejectUpdateParticipants()))
             }
         }
         val signTxn = subFlow(transactionSigner)

@@ -55,6 +55,8 @@ data class ChatInfo(
                             attachment = attachment?.toString(),
                             chatSender = sender,
                             chatReceiverList = receivers,
+                            status = status.toString(),
+                            messageType = chatMessageType.toString(),
                             participants = participants
                     )
                 else ->
@@ -63,7 +65,7 @@ data class ChatInfo(
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatSchema)
     override fun toString(): String {
-        return "ChatInfo(linearId=$linearId, created=$created, participants=$participants, subject='$subject', content='$content', attachment=$attachment, sender=$sender, receivers=$receivers, chatMessageType=$chatMessageType)"
+        return "ChatInfo(linearId=$linearId, created=$created, participants=$participants, subject='$subject', content='$content', attachment=$attachment, sender=$sender, receivers=$receivers, status=$status, chatMessageType=$chatMessageType)"
     }
 
 }

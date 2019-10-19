@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 @Component
-@InitiatedBy(NotifyFlow::class)
+@InitiatedBy(ChatNotifyFlow::class)
 class ChatObserverFlow(private val otherSession: FlowSession): FlowLogic<Unit>() {
 
     @Autowired

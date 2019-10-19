@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.AgreeClose
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.contracts.states.CloseChatStatus
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.CloseChatUtils
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.contracts.requireThat
@@ -31,7 +32,7 @@ class CloseChatAgreeFlow(
         val counterParties = allParties - ourIdentity
         val agreedParties = proposedCloseState.agreedParties.toMutableList().also { it.add(ourIdentity) }
 
-        val proposeState = CloseChatState(
+        val agreePropose = CloseChatState(
                 linearId = chatId,
                 initiator = ourIdentity,
                 toAgreeParties = allParties,
@@ -41,7 +42,7 @@ class CloseChatAgreeFlow(
         )
         val txnBuilder = TransactionBuilder(proposedCloseStateRef.state.notary)
                 // no input
-                .addOutputState(proposeState)
+                .addOutputState(agreePropose)
                 .addCommand(AgreeClose(), allParties.map { it.owningKey })
                 .also { it.verify(serviceHub) }
 
@@ -49,6 +50,9 @@ class CloseChatAgreeFlow(
         val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
         val counterPartySessions = counterParties.map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
+
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = agreePropose, command = AgreeClose()))
 
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
@@ -59,12 +63,17 @@ class CloseChatFlowAgreeResponder(val otherSession: FlowSession): FlowLogic<Sign
     @Suspendable
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
+            @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
                 val close = stx.tx.outputStates.single() as CloseChatState
                 println("""
                     | Got close chat agreement: ${close}.
                     | If all agreed, please do final close.
                 """.trimMargin())
+
+                // notify observers (including myself), if the app is listening
+                subFlow(ChatNotifyFlow(info = close, command = AgreeClose()))
+
             }
         }
         val signTxn = subFlow(transactionSigner)

@@ -5,6 +5,7 @@ import com.r3.corda.lib.chat.contracts.commands.UpdateParticipants
 import com.r3.corda.lib.chat.contracts.states.ChatMessageType
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsStatus
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -64,6 +65,10 @@ class UpdateParticipantsFlow(
         val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
         val counterPartySession = counterParties.map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySession))
+
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = proposeData, command = UpdateParticipants()))
+
         return subFlow(FinalityFlow(collectSignTxn, counterPartySession))
     }
 
@@ -104,6 +109,10 @@ class UpdateParticipantsFlowResponder(val otherSession: FlowSession): FlowLogic<
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
                 // no log, since the log is SendMessageResponder.
+                val proposeData = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as UpdateParticipantsState
+
+                // notify observers (including myself), if the app is listening
+                subFlow(ChatNotifyFlow(info = proposeData, command = UpdateParticipants()))
             }
         }
         val signTxn = subFlow(transactionSigner)

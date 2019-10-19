@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.ProposeClose
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
@@ -44,6 +45,9 @@ class CloseChatProposeFlow(
         val counterPartySessions = counterParties.map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
 
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = proposeState, command = ProposeClose()))
+
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
 }
@@ -54,12 +58,16 @@ class CloseChatProposeFlowResponder(val otherSession: FlowSession): FlowLogic<Si
     override fun call(): SignedTransaction {
 
         val transactionSigner = object : SignTransactionFlow(otherSession) {
+            @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
                 val close = stx.tx.outputStates.single() as CloseChatState
                 println("""
                     | Got close chat proposal: ${close}.
                     | please agree.
                 """.trimMargin())
+
+                // notify observers (including myself), if the app is listening
+                subFlow(ChatNotifyFlow(info = close, command = ProposeClose()))
             }
         }
         val signTxn = subFlow(transactionSigner)

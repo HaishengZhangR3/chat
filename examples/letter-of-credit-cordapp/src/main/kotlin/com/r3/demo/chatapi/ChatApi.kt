@@ -105,7 +105,7 @@ class ChatApi {
         return propose.coreTransaction.outputStates.single() as UpdateParticipantsState
     }
 
-    fun agreeAddParticipants(toAdd: List<Party>, chatId: UniqueIdentifier): UpdateParticipantsState {
+    fun agreeAddParticipants(chatId: UniqueIdentifier): UpdateParticipantsState {
         log.warn("***** agreeAddParticipants *****")
         val agree = proxy.startFlow(
                     ::AddParticipantsAgreeFlow,
@@ -114,7 +114,7 @@ class ChatApi {
         return agree.coreTransaction.outputStates.single() as UpdateParticipantsState
     }
 
-    fun rejectAddParticipants(toAdd: List<Party>, chatId: UniqueIdentifier): SignedTransaction {
+    fun rejectAddParticipants(chatId: UniqueIdentifier): SignedTransaction {
         log.warn("***** rejectAddParticipants *****")
         val reject = proxy.startFlow(
                     ::AddParticipantsRejectFlow,
@@ -123,7 +123,7 @@ class ChatApi {
         return reject
     }
 
-    fun addParticipants(toAdd: List<Party>, chatId: UniqueIdentifier): SignedTransaction {
+    fun addParticipants(chatId: UniqueIdentifier): SignedTransaction {
         log.warn("***** addParticipants *****")
         val doIt = proxy.startFlow(
                 ::AddParticipantsFlow,
@@ -142,7 +142,7 @@ class ChatApi {
         return propose.coreTransaction.outputStates.single() as UpdateParticipantsState
     }
 
-    fun agreeRemoveParticipants(toRemove: List<Party>, chatId: UniqueIdentifier): UpdateParticipantsState {
+    fun agreeRemoveParticipants(chatId: UniqueIdentifier): UpdateParticipantsState {
         log.warn("***** agreeRemoveParticipants *****")
         val agree = proxy.startFlow(
                 ::RemoveParticipantsAgreeFlow,
@@ -151,7 +151,7 @@ class ChatApi {
         return agree.coreTransaction.outputStates.single() as UpdateParticipantsState
     }
 
-    fun rejectRemoveParticipants(toRemove: List<Party>, chatId: UniqueIdentifier): SignedTransaction {
+    fun rejectRemoveParticipants(chatId: UniqueIdentifier): SignedTransaction {
         log.warn("***** rejectRemoveParticipants *****")
         val reject = proxy.startFlow(
                 ::RemoveParticipantsRejectFlow,
@@ -160,7 +160,7 @@ class ChatApi {
         return reject
     }
 
-    fun removeParticipants(toRemove: List<Party>, chatId: UniqueIdentifier): SignedTransaction {
+    fun removeParticipants(chatId: UniqueIdentifier): SignedTransaction {
         log.warn("***** removeParticipants *****")
         val doIt = proxy.startFlow(
                 ::RemoveParticipantsFlow,

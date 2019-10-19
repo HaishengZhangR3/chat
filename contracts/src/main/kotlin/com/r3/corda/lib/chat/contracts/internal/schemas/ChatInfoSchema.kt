@@ -41,8 +41,11 @@ data class PersistentChatInfo(
         val attachment: String? = null,
         @Column(name = "chatSender", unique = false, nullable = false)
         val chatSender: Party,
+        @Column(name = "status", unique = false, nullable = false)
+        val status: String,
+        @Column(name = "messageType", unique = false, nullable = false)
+        val messageType: String,
 
-        // @todo: toList are not saved in DB table, check why
         @ElementCollection
         @Column(name = "chatReceiverList", unique = false, nullable = false)
         @CollectionTable(name = "chat_receivers", joinColumns = [(JoinColumn(name = "output_index", referencedColumnName = "output_index")), (JoinColumn(name = "transaction_id", referencedColumnName = "transaction_id"))])

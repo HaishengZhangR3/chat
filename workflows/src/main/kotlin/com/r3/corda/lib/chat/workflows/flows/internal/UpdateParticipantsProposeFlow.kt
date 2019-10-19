@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.ProposeUpdateParticipants
 import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.contracts.requireThat
@@ -60,6 +61,10 @@ class UpdateParticipantsProposeFlow(
         val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
         val counterPartySessions = toParties.map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
+
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = participantsUpdate, command = ProposeUpdateParticipants()))
+
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
 }
@@ -69,6 +74,7 @@ class UpdateParticipantsProposeFlowResponder(val otherSession: FlowSession) : Fl
     @Suspendable
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {
+            @Suspendable
             override fun checkTransaction(stx: SignedTransaction): Unit {
                 val update = stx.tx.outputStates.single() as UpdateParticipantsState
                 println("""
@@ -77,6 +83,9 @@ class UpdateParticipantsProposeFlowResponder(val otherSession: FlowSession) : Fl
                     | toRemove = ${update.toRemove},
                     | please agree using add agree or remove agree properly.
                 """.trimMargin())
+
+                // notify observers (including myself), if the app is listening
+                subFlow(ChatNotifyFlow(info = update, command = ProposeUpdateParticipants()))
             }
         }
         val signTxn = subFlow(transactionSigner)

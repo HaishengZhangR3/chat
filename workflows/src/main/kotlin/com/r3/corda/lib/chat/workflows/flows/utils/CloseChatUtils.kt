@@ -1,9 +1,11 @@
 package com.r3.corda.lib.chat.workflows.flows.utils
 
+import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.Close
 import com.r3.corda.lib.chat.contracts.states.ChatID
 import com.r3.corda.lib.chat.contracts.states.CloseChatState
 import com.r3.corda.lib.chat.contracts.states.CloseChatStatus
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.FlowLogic
@@ -12,6 +14,7 @@ import java.security.PublicKey
 
 object CloseChatUtils {
 
+    @Suspendable
     fun closeChat(flow: FlowLogic<*>, linearId: ChatID, participants: List<PublicKey>): Unit {
 
         // get and consume all messages in vault
@@ -27,6 +30,9 @@ object CloseChatUtils {
         // sign it
         val signedTxn = flow.serviceHub.signInitialTransaction(txnBuilder)
         flow.serviceHub.recordTransactions(signedTxn)
+
+        // notify observers (including myself), if the app is listening
+        flow.subFlow(ChatNotifyFlow(info = "${flow.ourIdentity} is closed.", command = Close()))
     }
 
     // @codo: code de-duplicate with other close flows

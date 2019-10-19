@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.Reply
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import com.r3.corda.lib.chat.contracts.states.ChatMessageType
+import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
@@ -59,6 +60,10 @@ class SendMessageFlow(
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
+
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = outputChatInfo, command = Reply()))
+
         return signedTxn
     }
 }
@@ -85,6 +90,8 @@ class SendMessageFlowResponder(private val flowSession: FlowSession) : FlowLogic
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
 
+        // notify observers (including myself), if the app is listening
+        subFlow(ChatNotifyFlow(info = chatInfo, command = Reply()))
         println("Receiving replied message or participants updating message: $chatInfo")
         return signedTxn
     }
