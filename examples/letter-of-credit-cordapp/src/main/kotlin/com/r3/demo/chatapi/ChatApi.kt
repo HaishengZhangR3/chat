@@ -15,7 +15,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.getOrThrow
 
-class ChatApi {
+class ChatApi() {
 
     companion object {
         private val log = contextLogger()
@@ -23,6 +23,9 @@ class ChatApi {
 
     lateinit var proxy: CordaRPCOps
 
+    constructor(newProxy: CordaRPCOps) : this() {
+        proxy = newProxy
+    }
     fun init(newProxy: CordaRPCOps) {
         proxy = newProxy
     }

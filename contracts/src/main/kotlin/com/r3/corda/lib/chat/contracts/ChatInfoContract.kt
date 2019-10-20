@@ -21,7 +21,7 @@ class ChatInfoContract : Contract {
                 require(command.signers.size == 1) { "There should only be one required signer for a chat: sender." }
 
                 val output = tx.outputStates.single() as ChatInfo
-                require(output.receivers.isNotEmpty()) { "The receiver list should not be empty." }
+                require(output.receivers.isNotEmpty()) { "The receiver list should not be empty, or include only yourself." }
                 require(!output.receivers.contains(output.sender)) { "Sender should not be in receiver list."}
                 require(output.receivers.distinct().size == output.receivers.size) { "Receiver list should not have duplicate."}
 
