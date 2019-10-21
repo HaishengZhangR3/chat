@@ -94,7 +94,7 @@ class UpdateParticipantsFlow(
             requireThat { "There should be not rejection." using (rejected == 0) }
 
             val proposedState = it.single { it.status == UpdateParticipantsStatus.PROPOSED }
-            val partyAmount = proposedState.participants.size - 1 // proposer agreed by default
+            val partyAmount = proposedState.toAgreeParties.size - 1 // proposer agreed by default
             val agreed = it.filter { it.status == UpdateParticipantsStatus.AGREED }.size
             requireThat { "Not all participants agreed." using (partyAmount == agreed) }
         }

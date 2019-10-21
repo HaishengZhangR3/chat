@@ -2,6 +2,11 @@
 <script>
 let wsUrl = 'ws://localhost:20004'
 let serviceUrl = "http://localhost:10058/loc"<!-- to change port -->
+function clearIt() {
+  let content = document.getElementById('messages')
+  content.innerHTML = ''
+  content.prepend(img)
+}
 function showMe() {
   alert(" Name: DurrBank\n RPC port: 10016\n websocket port: 20004 \n web service: http://localhost:10058/loc")
 }
@@ -82,6 +87,7 @@ function openTab(evt, cityName) {
   <button class="tablinks" onclick="openTab(event, 'Add')">Add</button>
   <button class="tablinks" onclick="openTab(event, 'Remove')">Remove</button>
   <button class="tablinks" onclick="openTab(event, 'Others')">Others</button>
+  <button class="tablinks" onclick="clearIt()">Clear</button>
   <button class="tablinks" onclick="showMe()">DurrBank</button>
 </div>
 <div id="Basic" class="tabcontent">

@@ -27,7 +27,7 @@ class RemoveParticipantsProposeFlow(
     override fun call(): SignedTransaction {
         return subFlow(UpdateParticipantsProposeFlow(
                 chatId = chatId,
-                toAdd = toRemove
+                toRemove = toRemove
         ))
     }
 }

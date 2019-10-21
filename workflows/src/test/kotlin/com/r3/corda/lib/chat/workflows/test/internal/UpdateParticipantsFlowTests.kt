@@ -107,8 +107,8 @@ class UpdateParticipantsFlowTests {
 
         Assert.assertEquals(
                 (chatInfosInVaultA.map { it.state.data.linearId }
-                        + chatInfosInVaultA.map { it.state.data.linearId }
-                        + chatInfosInVaultA.map { it.state.data.linearId })
+                        + chatInfosInVaultB.map { it.state.data.linearId }
+                        + chatInfosInVaultB.map { it.state.data.linearId })
                         .distinct().size,
                 1
         )
@@ -122,4 +122,78 @@ class UpdateParticipantsFlowTests {
         Assert.assertEquals(updateParticipantsC.size, 0)
 
     }
+
+
+    @Test
+    fun `should be possible to remove participants from a chat`() {
+
+        // 1 create one
+        val newChatFlow = nodeA.startFlow(CreateChatFlow(
+                "subject",
+                "content",
+                null,
+                listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single())
+        ))
+        network.runNetwork()
+        newChatFlow.getOrThrow()
+
+        val chatInA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+        val chatInB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+
+        // 2. remove participants
+        val removeParticipantsFlow = nodeB.startFlow(
+                UpdateParticipantsProposeFlow(
+                        toRemove = listOf(nodeC.info.legalIdentities.single()),
+                        includingHistoryChat = true,
+                        chatId = chatInB.linearId
+                )
+        )
+
+        network.runNetwork()
+        removeParticipantsFlow.getOrThrow()
+
+        // 3. agree
+        val agreeParticipantsFlowA = nodeA.startFlow(
+                UpdateParticipantsAgreeFlow(
+                        chatInB.linearId
+                )
+        )
+        network.runNetwork()
+        agreeParticipantsFlowA.getOrThrow()
+
+        // 4. do update
+        val updateParticipantsFlowB = nodeB.startFlow(
+                UpdateParticipantsFlow(
+                        chatId = chatInB.linearId,
+                        force = false
+                )
+        )
+        network.runNetwork()
+        updateParticipantsFlowB.getOrThrow()
+
+        // chatinfo should not be consumed in A,B, and no one should be in C
+        val chatInfosInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
+        val chatInfosInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
+        val chatInfosInVaultC = nodeC.services.vaultService.queryBy(ChatInfo::class.java).states
+        Assert.assertEquals(chatInfosInVaultA.size, 2)
+        Assert.assertEquals(chatInfosInVaultB.size, 2)
+        Assert.assertEquals(chatInfosInVaultC.size, 0)
+
+        Assert.assertEquals(
+                (chatInfosInVaultA.map { it.state.data.linearId }
+                        + chatInfosInVaultB.map { it.state.data.linearId }
+                        + chatInfosInVaultB.map { it.state.data.linearId })
+                        .distinct().size,
+                1
+        )
+
+        // no update state result any more
+        val updateParticipantsA = nodeA.services.vaultService.queryBy(UpdateParticipantsState::class.java).states
+        val updateParticipantsB = nodeB.services.vaultService.queryBy(UpdateParticipantsState::class.java).states
+        val updateParticipantsC = nodeC.services.vaultService.queryBy(UpdateParticipantsState::class.java).states
+        Assert.assertEquals(updateParticipantsA.size, 0)
+        Assert.assertEquals(updateParticipantsB.size, 0)
+        Assert.assertEquals(updateParticipantsC.size, 0)
+    }
+
 }
