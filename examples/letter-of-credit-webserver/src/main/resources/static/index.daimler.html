@@ -1,4 +1,12 @@
 <!doctype html>
+<script>
+let wsUrl = 'ws://localhost:20001'
+let serviceUrl = "http://localhost:10055/loc"
+
+function showMe() {
+  alert(" Name: Daimler\n RPC port: 10011\n websocket port: 20001 \n web service: http://localhost:10055/loc")
+}
+</script>
 
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -75,6 +83,8 @@ function openTab(evt, cityName) {
   <button class="tablinks" onclick="openTab(event, 'Add')">Add</button>
   <button class="tablinks" onclick="openTab(event, 'Remove')">Remove</button>
   <button class="tablinks" onclick="openTab(event, 'Others')">Others</button>
+  <button class="tablinks" onclick="showMe()">Daimler</button>
+
 </div>
 <div id="Basic" class="tabcontent">
   <div>ID: <input size="50" type="text" id="replyChatId" maxlength="100"/></div>
@@ -137,7 +147,6 @@ function openTab(evt, cityName) {
 <div id="messages"></div>
 
 <script>
-let wsUrl = 'ws://localhost:20003'
 let socket = new WebSocket(wsUrl);
 
 // handle incoming messages
@@ -166,8 +175,6 @@ function showMessage(message) {
 
 <script>
 <!--server-->
-let serviceUrl = "http://localhost:10055/loc"
-
 <!--help function-->
 function post(path, data){
   var xhr = new XMLHttpRequest();
@@ -181,7 +188,6 @@ function post(path, data){
   xhr.open("POST", serviceUrl + path);
   xhr.setRequestHeader("Accept", "*/*");
   xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.setRequestHeader("Accept-Encoding", "gzip, deflate");
   if (data == null){
     xhr.send();
   } else {

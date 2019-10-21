@@ -26,4 +26,8 @@ data class CloseChatState(
         val toAgreeParties: List<Party>,
         val agreedParties: MutableList<Party>,
         val status: CloseChatStatus = CloseChatStatus.PROPOSED
-) : ChatBaseState
+) : ChatBaseState {
+    override fun toString(): String {
+        return "CloseChatState(linearId=$linearId, created=$created, participants=$participants, initiator=$initiator, toAgreeParties=$toAgreeParties, agreedParties=$agreedParties, status=$status)"
+    }
+}

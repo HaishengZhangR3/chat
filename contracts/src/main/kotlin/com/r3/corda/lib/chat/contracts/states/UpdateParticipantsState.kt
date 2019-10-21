@@ -33,4 +33,8 @@ data class UpdateParticipantsState(
         val agreedParties: MutableList<Party>,
         val status: UpdateParticipantsStatus = UpdateParticipantsStatus.PROPOSED,
         val includingHistoryChat: Boolean
-) : ChatBaseState
+) : ChatBaseState {
+    override fun toString(): String {
+        return "UpdateParticipantsState(linearId=$linearId, created=$created, participants=$participants, initiator=$initiator, toAdd=$toAdd, toRemove=$toRemove, toAgreeParties=$toAgreeParties, agreedParties=$agreedParties, status=$status, includingHistoryChat=$includingHistoryChat)"
+    }
+}
