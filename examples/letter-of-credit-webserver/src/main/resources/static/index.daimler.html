@@ -77,19 +77,18 @@ function openTab(evt, cityName) {
   <button class="tablinks" onclick="openTab(event, 'Others')">Others</button>
 </div>
 <div id="Basic" class="tabcontent">
-  <div>ID: <input size="50" type="text" name="replyChatId" maxlength="100"/></div>
-  <div>subject: <input size="50" type="text" name="replySubject" maxlength="100"/></div>
-  <div>content: <input size="50" type="text" name="replyContent" maxlength="100"/></div>
-  <div>participants: <input size="50" type="text" name="replyParticipants" maxlength="100"/></div>
+  <div>ID: <input size="50" type="text" id="replyChatId" maxlength="100"/></div>
+  <div>subject: <input size="50" type="text" id="replySubject" maxlength="100"/></div>
+  <div>content: <input size="50" type="text" id="replyContent" maxlength="100"/></div>
+  <div>participants: <input size="50" type="text" id="replyParticipants" maxlength="100"/></div>
   <div>
-    <button onclick="createChat()">create</button>
     <button onclick="createChat()">create</button>
     <button onclick="replyChat()">reply</button>
   </div>
 </div>
 
 <div id="Close" class="tabcontent">
-  <div>ID: <input size="50" type="text" name="closeChatId" maxlength="100"/></div>
+  <div>ID: <input size="50" type="text" id="closeChatId" maxlength="100"/></div>
   <div>
     <button onclick="proposeCloseChat()">propose</button>
     <button onclick="agreeCloseChat()">agree</button>
@@ -100,8 +99,8 @@ function openTab(evt, cityName) {
 </div>
 
 <div id="Add" class="tabcontent">
-  <div>ID: <input size="50" type="text" name="partyChatId" maxlength="100"/></div>
-  <div>participants: <input size="50" type="text" name="partyParticipants" maxlength="100"/></div>
+  <div>ID: <input size="50" type="text" id="addChatId" maxlength="100"/></div>
+  <div>participants: <input size="50" type="text" id="addParticipants" maxlength="100"/></div>
   <div>
     <button onclick="proposeAddParticipants()">propose</button>
     <button onclick="agreeAddParticipants()">agree</button>
@@ -112,8 +111,8 @@ function openTab(evt, cityName) {
 </div>
 
 <div id="Remove" class="tabcontent">
-  <div>ID: <input size="50" type="text" name="partyChatId" maxlength="100"/></div>
-  <div>participants: <input size="50" type="text" name="partyParticipants" maxlength="100"/></div>
+  <div>ID: <input size="50" type="text" id="removeChatId" maxlength="100"/></div>
+  <div>participants: <input size="50" type="text" id="removeParticipants" maxlength="100"/></div>
   <div>
     <button onclick="proposeRemoveParticipants()">propose</button>
     <button onclick="agreeRemoveParticipants()">agree</button>
@@ -124,7 +123,7 @@ function openTab(evt, cityName) {
 </div>
 
 <div id="Others" class="tabcontent">
-  <div>ID: <input size="50" type="text" name="partyChatId" maxlength="100"/></div>
+  <div>ID: <input size="50" type="text" id="queryChatId" maxlength="100"/></div>
   <div>
     <button onclick="getAllChatIDs()">all ID</button>
     <button onclick="getAllChats()">all msgs</button>
@@ -138,15 +137,8 @@ function openTab(evt, cityName) {
 <div id="messages"></div>
 
 <script>
-let url = 'ws://localhost:20003'
-let socket = new WebSocket(url);
-
-// send message from the form
-document.forms.publish.onsubmit = function() {
-  let outgoingMessage = this.message.value;
-  socket.send(outgoingMessage);
-  return false;
-};
+let wsUrl = 'ws://localhost:20003'
+let socket = new WebSocket(wsUrl);
 
 // handle incoming messages
 socket.onmessage = function(event) {
@@ -173,34 +165,133 @@ function showMessage(message) {
 
 
 <script>
-<!--function createChat() {-->
-<!--    var xhttp = new XMLHttpRequest();-->
-<!--    xhttp.onreadystatechange = function() {-->
-<!--         if (this.readyState == 4 && this.status == 200) {-->
-<!--             showMessage(this.responseText);-->
-<!--         }-->
-<!--    };-->
-<!--    xhttp.open("GET", "http://localhost:10055/loc/test", true);-->
-<!--    //xhttp.send("Your JSON Data Here");-->
-<!--    xhttp.send()-->
-<!--}-->
+<!--server-->
+let serviceUrl = "http://localhost:10055/loc"
 
-function createChat() {
-   var data = null;
+<!--help function-->
+function post(path, data){
+  var xhr = new XMLHttpRequest();
+  xhr.withCredentials = true;
+  xhr.addEventListener("readystatechange", function () {
+    if (this.readyState === 4 && this.status == 200) {
+      showMessage(this.responseText);
+    }
+  });
 
-    var xhr = new XMLHttpRequest();
-    xhr.withCredentials = true;
-
-    xhr.addEventListener("readystatechange", function () {
-      if (this.readyState === 4 && this.status == 200) {
-        showMessage(this.responseText);
-      }
-    });
-
-
-    xhr.open("GET", "http://localhost:10055/loc/test");
-    xhr.setRequestHeader("Accept", "*/*");
+  xhr.open("POST", serviceUrl + path);
+  xhr.setRequestHeader("Accept", "*/*");
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.setRequestHeader("Accept-Encoding", "gzip, deflate");
+  if (data == null){
+    xhr.send();
+  } else {
     xhr.send(data);
+  }
 }
 
+function get(path){
+  var xhr = new XMLHttpRequest();
+  xhr.withCredentials = true;
+  xhr.addEventListener("readystatechange", function () {
+    if (this.readyState === 4 && this.status == 200) {
+      showMessage(this.responseText);
+    }
+  });
+
+  xhr.open("GET", serviceUrl + path);
+  xhr.setRequestHeader("Accept", "*/*");
+  xhr.send(null);
+}
+function getInput(elementId) {
+  return document.getElementById(elementId).value;
+}
+
+<!--user click event-->
+function createChat() {
+  var receivers = getInput("replyParticipants").split(",")
+  var data = JSON.stringify({
+    "subject": getInput("replySubject"),
+    "content": getInput("replyContent"),
+    "receivers": receivers
+  });
+
+  post("/chat", data)
+}
+function replyChat() {
+  post("/chat/" + getInput("replyChatId"), getInput("replyContent"))
+}
+
+function proposeCloseChat() {
+  post("/chat/" + getInput("closeChatId") + "/close/propose")
+}
+function agreeCloseChat() {
+  post("/chat/" + getInput("closeChatId") + "/close/agree")
+}
+function rejectCloseChat() {
+  post("/chat/" + getInput("closeChatId") + "/close/reject")
+}
+function closeChat() {
+  post("/chat/" + getInput("closeChatId") + "/close")
+}
+function getChatCloseProposal() {
+  get("/chat/" + getInput("closeChatId") + "/proposal/closeChat")
+}
+
+
+function proposeAddParticipants() {
+  var data = JSON.stringify(
+    getInput("addParticipants").split(",")
+  );
+  post("/chat/" + getInput("addChatId") + "/participants/add/propose", data)
+}
+function agreeAddParticipants() {
+  post("/chat/" + getInput("addChatId") + "/participants/add/agree")
+}
+function rejectAddParticipants() {
+  post("/chat/" + getInput("addChatId") + "/participants/add/reject")
+}
+function addParticipants() {
+  post("/chat/" + getInput("addChatId") + "/participants/add")
+}
+function getChatUpdateParticipantsProposal() {
+  get("/chat/" + getInput("addChatId") + "/proposal/updateParticipants")
+}
+
+
+function proposeRemoveParticipants() {
+  var data = JSON.stringify(
+    getInput("removeParticipants").split(",")
+  );
+  post("/chat/" + getInput("removeChatId") + "/participants/remove/propose", data)
+}
+function agreeRemoveParticipants() {
+  post("/chat/" + getInput("removeChatId") + "/participants/remove/agree")
+}
+function rejectRemoveParticipants() {
+  post("/chat/" + getInput("removeChatId") + "/participants/remove/reject")
+}
+function removeParticipants() {
+  post("/chat/" + getInput("removeChatId") + "/participants/remove")
+}
+function getChatUpdateParticipantsProposal() {
+  get("/chat/" + getInput("removeChatId") + "/proposal/updateParticipants")
+}
+
+
+function getAllChatIDs() {
+  get("/chats/ids")
+}
+function getAllChats() {
+  get("/chats/messages")
+}
+
+function getChatAllMessages() {
+  get("/chat/" + getInput("queryChatId"))
+}
+function getChatCurrentStatus() {
+  get("/chat/" + getInput("queryChatId") + "/status")
+}
+function getChatParticipants() {
+  get("/chat/" + getInput("queryChatId") + "/participants")
+}
 </script>
