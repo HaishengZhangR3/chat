@@ -5,7 +5,7 @@ let serviceUrl = "http://localhost:10057/loc" <!-- to change port -->
 function clearIt() {
   let content = document.getElementById('messages')
   content.innerHTML = ''
-  content.prepend(img)
+  content.prepend(createLogo())
 }
 function showMe() {
   alert(" Name: Durr\n RPC port: 10006\n websocket port: 20003 \n web service: http://localhost:10057/loc")
@@ -120,7 +120,7 @@ function openTab(evt, cityName) {
     <button onclick="agreeAddParticipants()">agree</button>
     <button onclick="rejectAddParticipants()">reject</button>
     <button onclick="addParticipants()">add</button>
-    <button onclick="getChatUpdateParticipantsProposal()">get proposal</button>
+    <button onclick="getAddParticipantsProposal()">get proposal</button>
   </div>
 </div>
 
@@ -132,7 +132,7 @@ function openTab(evt, cityName) {
     <button onclick="agreeRemoveParticipants()">agree</button>
     <button onclick="rejectRemoveParticipants()">reject</button>
     <button onclick="removeParticipants()">remove</button>
-    <button onclick="getChatUpdateParticipantsProposal()">get proposal</button>
+    <button onclick="getRemoveParticipantsProposal()">get proposal</button>
   </div>
 </div>
 
@@ -163,16 +163,20 @@ socket.onclose = event => console.log(`Closed ${event.code}`);
 
 // show message in div#messages
 function showMessage(message) {
-  var img = document.createElement("img");
-  img.src = 'https://www.r3.com/wp-content/themes/r3/assets/images/logo.svg'
-  img.height = 20
-  img.width = 20
+  var logo = createLogo()
   let content = document.getElementById('messages')
-  content.prepend(img)
+  content.prepend(logo)
 
   let messageElem = document.createElement('div');
   messageElem.textContent = message;
   content.prepend(messageElem);
+}
+function createLogo(){
+  var img = document.createElement("img");
+  img.src = 'https://www.r3.com/wp-content/themes/r3/assets/images/logo.svg'
+  img.height = 20
+  img.width = 20
+  return img
 }
 </script>
 
@@ -184,8 +188,12 @@ function post(path, data){
   var xhr = new XMLHttpRequest();
   xhr.withCredentials = true;
   xhr.addEventListener("readystatechange", function () {
-    if (this.readyState === 4 && this.status == 200) {
-      showMessage(this.responseText);
+    if (this.readyState === 4) {
+      if (this.status == 200) {
+        showMessage("Mission accomplished");
+      } else {
+        alert('Error occurs: \nstatus code:\n' + this.status);
+      }
     }
   });
 
@@ -203,8 +211,12 @@ function get(path){
   var xhr = new XMLHttpRequest();
   xhr.withCredentials = true;
   xhr.addEventListener("readystatechange", function () {
-    if (this.readyState === 4 && this.status == 200) {
-      showMessage(this.responseText);
+    if (this.readyState === 4) {
+      if (this.status == 200) {
+        showMessage(this.responseText);
+      } else {
+        alert('Error occurs: \nstatus code:\n' + this.status);
+      }
     }
   });
 
@@ -263,7 +275,7 @@ function rejectAddParticipants() {
 function addParticipants() {
   post("/chat/" + getInput("addChatId") + "/participants/add")
 }
-function getChatUpdateParticipantsProposal() {
+function getAddParticipantsProposal() {
   get("/chat/" + getInput("addChatId") + "/proposal/updateParticipants")
 }
 
@@ -283,7 +295,7 @@ function rejectRemoveParticipants() {
 function removeParticipants() {
   post("/chat/" + getInput("removeChatId") + "/participants/remove")
 }
-function getChatUpdateParticipantsProposal() {
+function getRemoveParticipantsProposal() {
   get("/chat/" + getInput("removeChatId") + "/proposal/updateParticipants")
 }
 
