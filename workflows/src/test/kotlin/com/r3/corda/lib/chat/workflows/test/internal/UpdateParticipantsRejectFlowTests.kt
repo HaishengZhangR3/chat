@@ -5,6 +5,7 @@ import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsProposeFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsRejectFlow
+import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -37,6 +38,7 @@ class UpdateParticipantsRejectFlowTests {
         nodeA = network.createPartyNode()
         nodeB = network.createPartyNode()
         nodeC = network.createPartyNode()
+        ObserverUtils.registerObserver(listOf(nodeA, nodeB, nodeC))
 
         network.runNetwork()
     }

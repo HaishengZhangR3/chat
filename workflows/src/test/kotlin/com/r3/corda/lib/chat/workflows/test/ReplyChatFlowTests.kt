@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.test
 import com.r3.corda.lib.chat.contracts.states.ChatInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
+import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -33,6 +34,7 @@ class ReplyChatFlowTests {
         )
         nodeA = network.createPartyNode()
         nodeB = network.createPartyNode()
+        ObserverUtils.registerObserver(listOf(nodeA, nodeB))
 
         network.runNetwork()
     }
