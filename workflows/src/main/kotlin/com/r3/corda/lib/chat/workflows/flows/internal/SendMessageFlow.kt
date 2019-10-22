@@ -47,7 +47,8 @@ class SendMessageFlow(
         )
 
         val txnBuilder = TransactionBuilder(notary = headMessageState.state.notary)
-                // no any input
+                // no any input, but ref
+                .addReferenceState(headMessageState.referenced())
                 .addOutputState(outputChatInfo)
                 .addCommand(Reply(), ourIdentity.owningKey)
                 .also {

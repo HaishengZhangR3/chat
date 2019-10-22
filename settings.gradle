@@ -1,5 +1,5 @@
 include 'contracts'
 include 'workflows'
-include 'examples:letter-of-credit-webserver'
-include 'examples:letter-of-credit-cordapp'
+include 'examples:client-webserver'
+include 'examples:client-cordapp'
 include 'examples:integrationTest'
