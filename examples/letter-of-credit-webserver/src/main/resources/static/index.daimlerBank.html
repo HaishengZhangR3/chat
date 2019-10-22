@@ -5,7 +5,6 @@ let serviceUrl = "http://localhost:10056/loc"<!-- to change port -->
 function clearIt() {
   let content = document.getElementById('messages')
   content.innerHTML = ''
-  content.prepend(createLogo())
 }
 function showMe() {
   alert(" Name: DaimlerBank\n RPC port: 10021\n websocket port: 20002 \n web service: http://localhost:10056/loc")
@@ -88,7 +87,7 @@ function openTab(evt, cityName) {
   <button class="tablinks" onclick="openTab(event, 'Remove')">Remove</button>
   <button class="tablinks" onclick="openTab(event, 'Others')">Others</button>
   <button class="tablinks" onclick="clearIt()">Clear</button>
-  <button class="tablinks" onclick="showMe()">DaimlerBank</button>
+  <button class="tablinks" onclick="showMe()" style="color:red"><B>DaimlerBank</B></button>
 </div>
 <div id="Basic" class="tabcontent">
   <div>ID: <input size="50" type="text" id="replyChatId" maxlength="100"/></div>
