@@ -46,23 +46,4 @@ class CustomController(rpc: NodeRPCConnection) {
         ).returnValue.getOrThrow()
         return createChat.state.data
     }
-
-    // below api are just for test
-
-    /** Helpers for filtering the network map cache. */
-    fun X500Name.toDisplayString() : String  = BCStyle.INSTANCE.toString(this)
-    private fun isNotary(nodeInfo: NodeInfo) = rpcOps.notaryIdentities().any { nodeInfo.isLegalIdentity(it) }
-    private fun isMe(nodeInfo: NodeInfo) = nodeInfo.legalIdentities.first().name == me.name
-    private fun isNetworkMap(nodeInfo : NodeInfo) = nodeInfo.legalIdentities.single().name.organisation == "Network Map Service"
-
-    @GetMapping(value = ["/me"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun whoami() = mapOf("me" to me.toString())
-
-    @GetMapping(value = ["/peers"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    fun getPeers(): Map<String, List<String>> {
-        return mapOf("peers" to rpcOps.networkMapSnapshot()
-                .filter { isNotary(it).not() && isMe(it).not() && isNetworkMap(it).not() }
-                .map { it.legalIdentities.first().name.toX500Name().toDisplayString() })
-    }
-
 }
