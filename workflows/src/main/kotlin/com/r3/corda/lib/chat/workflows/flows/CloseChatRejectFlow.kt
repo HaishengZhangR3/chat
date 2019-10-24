@@ -40,7 +40,7 @@ class CloseChatRejectFlow(
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySessions))
 
         // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = headState, command = RejectClose()))
+        subFlow(ChatNotifyFlow(info = headState.state.data, command = RejectClose()))
         return subFlow(FinalityFlow(collectSignTxn, counterPartySessions))
     }
 }

@@ -1,5 +1,7 @@
 package net.corda.server.controllers
 
+import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
 import com.r3.corda.lib.chat.workflows.flows.service.ChatQuerySpec
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.server.NodeRPCConnection
@@ -43,11 +45,11 @@ class ChatController(rpc: NodeRPCConnection) {
     @PostMapping(value = ["/chat/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun replyChat(@PathVariable("id") id: String,
                   @RequestBody content: String) =
-        ChatService.api(proxy).replyChat(
-                chatId = toID(id),
-                content = content,
-                attachment = null
-        ).toString()
+            ChatService.api(proxy).replyChat(
+                    chatId = toID(id),
+                    content = content,
+                    attachment = null
+            ).toString()
 
     ////////////////////  chat close api ////////////////////
     @PostMapping(value = ["/chat/{id}/close/propose"], produces = [MediaType.TEXT_PLAIN_VALUE])
@@ -146,11 +148,11 @@ class ChatController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/chats/messages"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getAllChats() =
-            ChatService.api(proxy).getAllChats().toString()
+            chatInfoToString(ChatService.api(proxy).getAllChats().map { it.state.data })
 
     @GetMapping(value = ["/chats/messages/by"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getAllChatsBy(@RequestBody querySpec: APIChatQuerySpec) =
-            ChatService.api(proxy).getAllChatsBy(
+            chatInfoToString(ChatService.api(proxy).getAllChatsBy(
                     ChatQuerySpec(
                             chatId = toID(querySpec.chatId!!),
                             initiator = if (querySpec.initiator == null) null
@@ -159,16 +161,16 @@ class ChatController(rpc: NodeRPCConnection) {
                             createdTimeFrom = querySpec.createdTimeFrom,
                             createdTimeUntil = querySpec.createdTimeUntil
                     )
-            ).toString()
+            ).map { it.state.data })
 
     @GetMapping(value = ["/chat/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getChatAllMessages(@PathVariable("id") id: String) =
-            ChatService.api(proxy).getChatAllMessages(toID(id)).toString()
+            chatInfoToString(ChatService.api(proxy).getChatAllMessages(toID(id)).map { it.state.data })
 
     @GetMapping(value = ["/chat/{id}/by"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getChatMessagesBy(@PathVariable("id") id: String,
                           @RequestBody querySpec: APIChatQuerySpec) =
-            ChatService.api(proxy).getChatMessagesBy(
+            chatInfoToString(ChatService.api(proxy).getChatMessagesBy(
                     ChatQuerySpec(
                             chatId = toID(id),
                             initiator = if (querySpec.initiator == null) null
@@ -177,7 +179,7 @@ class ChatController(rpc: NodeRPCConnection) {
                             createdTimeFrom = querySpec.createdTimeFrom,
                             createdTimeUntil = querySpec.createdTimeUntil
                     )
-            ).toString()
+            ) .map { it.state.data })
 
     @GetMapping(value = ["/chat/{id}/status"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getChatCurrentStatus(@PathVariable("id") id: String) =
@@ -185,7 +187,7 @@ class ChatController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/chat/{id}/participants"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getChatParticipants(@PathVariable("id") id: String) =
-            ChatService.api(proxy).getChatParticipants(toID(id)).map { it.name }.toString()
+            ChatService.api(proxy).getChatParticipants(toID(id)).map { it.name.organisation }.toString()
 
     @GetMapping(value = ["/chat/{id}/proposal/closeChat"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getChatCloseProposal(@PathVariable("id") id: String) =
@@ -195,4 +197,13 @@ class ChatController(rpc: NodeRPCConnection) {
     fun getChatUpdateParticipantsProposal(@PathVariable("id") id: String) =
             ChatService.api(proxy).getChatUpdateParticipantsProposal(toID(id)).toString()
 
+    private fun chatInfoToString(infos: List<ChatInfo>) =
+            infos.map { info ->
+                """
+                ChatId: ${info.linearId},
+                Sender: ${info.sender.name.organisation},
+                Subject: ${info.subject},
+                Content: ${info.content}
+            """.trimIndent()
+            }.toString()
 }

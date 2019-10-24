@@ -19,10 +19,18 @@ import java.time.Instant
 
 @CordaSerializable
 sealed class ChatStatus {
-    object ACTIVE : ChatStatus()
-    object CLOSE_PROPOSED : ChatStatus()
-    object CLOSE_AGREED : ChatStatus()
-    object CLOSED : ChatStatus()
+    object ACTIVE : ChatStatus() {
+        override fun toString() = "Active"
+    }
+    object CLOSE_PROPOSED : ChatStatus() {
+        override fun toString() = "Close Proposed"
+    }
+    object CLOSE_AGREED : ChatStatus(){
+        override fun toString() = "Close Agreed"
+    }
+    object CLOSED : ChatStatus(){
+        override fun toString() = "Closed"
+    }
 }
 
 @CordaSerializable

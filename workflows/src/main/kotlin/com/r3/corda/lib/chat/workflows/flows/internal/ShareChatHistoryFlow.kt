@@ -44,6 +44,6 @@ class ShareChatHistoryFlowResponder(private val otherSession: FlowSession) : Flo
         serviceHub.recordTransactions(signedTxns)
 
         // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = historyMessages, command = ShareHistory()))
+        historyMessages.forEach { historyMessage -> subFlow(ChatNotifyFlow(info = historyMessage, command = ShareHistory())) }
     }
 }

@@ -32,7 +32,7 @@ object CloseChatUtils {
         flow.serviceHub.recordTransactions(signedTxn)
 
         // notify observers (including myself), if the app is listening
-        flow.subFlow(ChatNotifyFlow(info = "${flow.ourIdentity} is closed.", command = Close()))
+        flow.subFlow(ChatNotifyFlow(info = anyMessageStateRef.state.data, command = Close()))
     }
 
     // @codo: code de-duplicate with other close flows
