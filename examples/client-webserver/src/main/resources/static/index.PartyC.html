@@ -82,43 +82,28 @@ function openTab(evt, cityName) {
 
 <div class="tab">
   <button class="tablinks" onclick="openTab(event, 'Basic')">Basic</button>
-  <button class="tablinks" onclick="openTab(event, 'Close')">Close</button>
-  <button class="tablinks" onclick="openTab(event, 'Add')">Add</button>
-  <button class="tablinks" onclick="openTab(event, 'Remove')">Remove</button>
+  <button class="tablinks" onclick="openTab(event, 'Update')">Update</button>
   <button class="tablinks" onclick="openTab(event, 'Others')">Others</button>
   <button class="tablinks" onclick="clearIt()">Clear</button>
   <button class="tablinks" onclick="showMe()" style="color:red"><B>PartyC</B></button>
 </div>
 <div id="Basic" class="tabcontent">
-  <div>ID: <input size="50" type="text" id="replyChatId" maxlength="100"/></div>
-  <div>subject: <input size="50" type="text" id="replySubject" maxlength="100"/></div>
-  <div>content: <input size="50" type="text" id="replyContent" maxlength="100"/></div>
-  <div>participants: <input size="50" type="text" id="replyParticipants" maxlength="100"/></div>
+  <div>ID: <input size="50" type="text" id="basicChatId" maxlength="100"/></div>
+  <div>subject: <input size="50" type="text" id="basicSubject" maxlength="100"/></div>
+  <div>content: <input size="50" type="text" id="basicContent" maxlength="100"/></div>
+  <div>participants: <input size="50" type="text" id="basicParticipants" maxlength="100"/></div>
   <div>
     <button onclick="createChat()">create</button>
     <button onclick="replyChat()">reply</button>
-  </div>
-</div>
-
-<div id="Close" class="tabcontent">
-  <div>ID: <input size="50" type="text" id="closeChatId" maxlength="100"/></div>
-  <div>
     <button onclick="closeChat()">close</button>
   </div>
 </div>
 
-<div id="Add" class="tabcontent">
-  <div>ID: <input size="50" type="text" id="addChatId" maxlength="100"/></div>
-  <div>participants: <input size="50" type="text" id="addParticipants" maxlength="100"/></div>
+<div id="Update" class="tabcontent">
+  <div>ID: <input size="50" type="text" id="updateChatId" maxlength="100"/></div>
+  <div>participants: <input size="50" type="text" id="updateParticipants" maxlength="100"/></div>
   <div>
     <button onclick="addParticipants()">add</button>
-  </div>
-</div>
-
-<div id="Remove" class="tabcontent">
-  <div>ID: <input size="50" type="text" id="removeChatId" maxlength="100"/></div>
-  <div>participants: <input size="50" type="text" id="removeParticipants" maxlength="100"/></div>
-  <div>
     <button onclick="removeParticipants()">remove</button>
   </div>
 </div>
@@ -217,33 +202,44 @@ function getInput(elementId) {
 
 <!--user click event-->
 function createChat() {
-  var receivers = getInput("replyParticipants").split(",")
+  var receivers = getInput("basicParticipants").split(",")
   var data = JSON.stringify({
-    "subject": getInput("replySubject"),
-    "content": getInput("replyContent"),
+    "subject": getInput("basicSubject"),
+    "content": getInput("basicContent"),
     "receivers": receivers
   });
 
   post("/chat", data)
 }
 function replyChat() {
-  post("/chat/" + getInput("replyChatId"), getInput("replyContent"))
+  var data = JSON.stringify({
+    "subject": getInput("basicSubject"),
+    "content": getInput("basicContent")
+  });
+
+  post("/chat/" + getInput("basicChatId"), data)
 }
 
 function closeChat() {
-  post("/chat/" + getInput("closeChatId") + "/close")
+  post("/chat/" + getInput("basicChatId") + "/close")
 }
-
 
 function addParticipants() {
-  post("/chat/" + getInput("addChatId") + "/participants/add")
-}
+  var toAdd = getInput("updateParticipants").split(",")
+  var data = JSON.stringify({
+    "receivers": toAdd
+  });
 
+  post("/chat/" + getInput("updateChatId") + "/participants/add", data)
+}
 
 function removeParticipants() {
-  post("/chat/" + getInput("removeChatId") + "/participants/remove")
+  var toRemove = getInput("updateParticipants").split(",")
+  var data = JSON.stringify({
+    "receivers": toRemove
+  });
+  post("/chat/" + getInput("updateChatId") + "/participants/remove", data)
 }
-
 
 function getAllChatIDs() {
   get("/chats/ids")

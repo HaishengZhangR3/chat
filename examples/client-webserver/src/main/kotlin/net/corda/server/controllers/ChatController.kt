@@ -26,9 +26,9 @@ class ChatController(rpc: NodeRPCConnection) {
     ////////////////////  chat related api ////////////////////
     // data used between web service and UI
     data class APIChatMessage(
-            val subject: String,
-            val content: String,
-            val receivers: List<String>)
+            val subject: String = "",
+            val content: String = "",
+            val receivers: List<String> = emptyList())
 
     @PostMapping(value = ["/chat"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun createChat(@RequestBody chatMessage: APIChatMessage) =
@@ -40,11 +40,11 @@ class ChatController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/chat/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun replyChat(@PathVariable("id") id: String,
-                  @RequestBody content: String) =
+                  @RequestBody chatMessage: APIChatMessage) =
             ChatService.api(proxy).replyChat(
                     chatId = toID(id),
-                    subject = "al;ksjdf;lajksf", //todo: get from UI
-                    content = content
+                    subject = chatMessage.subject,
+                    content = chatMessage.content
             ).toString()
 
     ////////////////////  chat close api ////////////////////
@@ -57,19 +57,21 @@ class ChatController(rpc: NodeRPCConnection) {
 
     ////////////////////  chat add participants api ////////////////////
     @PostMapping(value = ["/chat/{id}/participants/add"], produces = [MediaType.TEXT_PLAIN_VALUE])
-    fun addParticipants(@PathVariable("id") id: String) {
+    fun addParticipants(@PathVariable("id") id: String,
+                        @RequestBody chatMessage: APIChatMessage) {
         ChatService.api(proxy).addParticipants(
                 chatId = toID(id),
-                toAdd = listOf() //todo: get from UI
+                toAdd = chatMessage.receivers.map { proxy.partiesFromName(it, true).first() }
         ).toString()
     }
 
     ////////////////////  chat remove participants api ////////////////////
     @PostMapping(value = ["/chat/{id}/participants/remove"], produces = [MediaType.TEXT_PLAIN_VALUE])
-    fun removeParticipants(@PathVariable("id") id: String) {
+    fun removeParticipants(@PathVariable("id") id: String,
+                           @RequestBody chatMessage: APIChatMessage) {
         ChatService.api(proxy).removeParticipants(
                 chatId = toID(id),
-                toRemove = listOf()//todo: get from UI
+                toRemove = chatMessage.receivers.map { proxy.partiesFromName(it, true).first() }
         ).toString()
     }
 
