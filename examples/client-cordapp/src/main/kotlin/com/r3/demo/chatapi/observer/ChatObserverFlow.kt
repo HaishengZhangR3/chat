@@ -45,6 +45,7 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
                     "New Message: " + chatInfoToString(message)
                 }
                 is CloseMeta            -> { info as ChatMetaInfo; "${info.linearId} is closed by ${info.admin}" }
+                // is CloseMessages: don't care, will update customers only after ChatMetaInfo closed
                 is AddParticipants      -> { info as ChatMetaInfo; "Added to chat ${info.linearId}." }
                 is RemoveParticipants   -> { info as ChatMetaInfo; "Removed from chat ${info.linearId}." }
                 else                    -> ""

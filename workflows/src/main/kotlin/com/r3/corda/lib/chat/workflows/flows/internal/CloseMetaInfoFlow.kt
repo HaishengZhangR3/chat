@@ -24,6 +24,10 @@ class CloseMetaInfoFlow(
         // get and consume all messages in vault
         val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
         val metaInfo = metaInfoStateAndRef.state.data
+        if (ourIdentity != metaInfo.admin) {
+            throw FlowException("Only chat admin can close the chat.")
+        }
+
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)
                 .addCommand(CloseMeta(), metaInfo.participants.map { it.owningKey })
                 .addInputState(metaInfoStateAndRef)

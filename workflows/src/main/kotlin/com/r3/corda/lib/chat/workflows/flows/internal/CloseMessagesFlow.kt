@@ -3,6 +3,7 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.CloseMessages
 import com.r3.corda.lib.chat.contracts.states.ChatID
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
@@ -20,6 +21,12 @@ class CloseMessagesFlow(
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
+        // get and consume all messages in vault
+        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
+        if (ourIdentity != metaInfoStateAndRef.state.data.admin) {
+            throw FlowException("Only chat admin can close the chat.")
+        }
+
         val txn = CloseChatMessagesUtil.close(this, chatId)
         CloseChatMessagesUtil.closeCounterParties(this, chatId)
         return txn
@@ -30,17 +37,8 @@ class CloseMessagesFlow(
 class CloseMessagesFlowResponder(val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
-
         val chatId = otherSession.receive<ChatID>().unwrap { it }
-
-        val transactionSigner = object : SignTransactionFlow(otherSession) {
-            @Suspendable
-            override fun checkTransaction(stx: SignedTransaction) {
-                CloseChatMessagesUtil.close(this, chatId)
-            }
-        }
-        val signTxn = subFlow(transactionSigner)
-        return subFlow(ReceiveFinalityFlow(otherSession, signTxn.id))
+        return CloseChatMessagesUtil.close(this, chatId)
     }
 }
 
@@ -49,16 +47,14 @@ private object CloseChatMessagesUtil {
     fun close(flow: FlowLogic<SignedTransaction>, chatId: UniqueIdentifier): SignedTransaction {
 
         // get and consume all messages in vault
-        val messagesStateRef = flow.chatVaultService.getActiveMessages(chatId)
+        val metaInfoStateAndRef = flow.chatVaultService.getMetaInfo(chatId)
+        val metaInfo = metaInfoStateAndRef.state.data
+
+        val messagesStateRef = flow.chatVaultService.getVaultStates<ChatMessage>(chatId)
         requireThat { "There must be message in vault" using (messagesStateRef.isNotEmpty()) }
 
-        val metaInfoStateAndRef = flow.chatVaultService.getActiveMetaInfo(chatId)
-        requireThat { "There must be message in vault" using (metaInfoStateAndRef != null) }
-        metaInfoStateAndRef!!
-        val messages = messagesStateRef.map { it.state.data }
-
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)
-                .addCommand(CloseMessages(), messages.first().participants.map { it.owningKey })
+                .addCommand(CloseMessages(), flow.ourIdentity.owningKey)
                 .addReferenceState(metaInfoStateAndRef.referenced())
         messagesStateRef.forEach { txnBuilder.addInputState(it) }
         txnBuilder.verify(flow.serviceHub)
@@ -68,14 +64,14 @@ private object CloseChatMessagesUtil {
         flow.serviceHub.recordTransactions(selfSignedTxn)
 
         // notify observers (including myself), if the app is listening
-        flow.subFlow(ChatNotifyFlow(info = messages, command = CloseMessages()))
+        flow.subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMessages()))
         return selfSignedTxn
     }
 
     @Suspendable
     fun closeCounterParties(flow: FlowLogic<SignedTransaction>, chatId: UniqueIdentifier){
-        val metaInfoStateAndRef = flow.chatVaultService.getActiveMetaInfo(chatId)
-        val metaInfo = metaInfoStateAndRef!!.state.data
+        val metaInfoStateAndRef = flow.chatVaultService.getMetaInfo(chatId)
+        val metaInfo = metaInfoStateAndRef.state.data
         metaInfo.receivers.map { flow.initiateFlow(it).send(metaInfo.linearId) }
     }
 }

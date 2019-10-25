@@ -49,7 +49,7 @@ class CloseChatFlowTests {
     }
 
     @Test
-    fun `should be possible to close a chat forcely`() {
+    fun `should be possible to close a chat`() {
 
         // 1 create one
         val newChatFlow = nodeA.startFlow(CreateChatFlow(
@@ -85,12 +85,19 @@ class CloseChatFlowTests {
 
 
         // there are 0 chat on ledge in each node
-        val chatsInVaultA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val chatsInVaultB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val chatsInVaultC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        Assert.assertTrue(chatsInVaultA.isEmpty())
-        Assert.assertTrue(chatsInVaultB.isEmpty())
-        Assert.assertTrue(chatsInVaultC.isEmpty())
+        val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val chatMetaC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        Assert.assertTrue(chatMetaA.isEmpty())
+        Assert.assertTrue(chatMetaB.isEmpty())
+        Assert.assertTrue(chatMetaC.isEmpty())
+
+        val chatMessagesA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
+        val chatMessagesB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
+        val chatMessagesC = nodeC.services.vaultService.queryBy(ChatMessage::class.java).states
+        Assert.assertTrue(chatMessagesA.isEmpty())
+        Assert.assertTrue(chatMessagesB.isEmpty())
+        Assert.assertTrue(chatMessagesC.isEmpty())
 
     }
 }

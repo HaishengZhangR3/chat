@@ -19,7 +19,6 @@ class CloseChatFlow(
 
     @Suspendable
     override fun call(): SignedTransaction {
-        // @todo: close should fail if there is no chat in vault
         subFlow(CloseMessagesFlow(chatId))
         return subFlow(CloseMetaInfoFlow(chatId))
     }
