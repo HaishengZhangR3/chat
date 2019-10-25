@@ -48,7 +48,7 @@ data class ChatMetaInfo(
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatMetaInfoSchema)
     override fun toString(): String {
-        return "ChatInfo(linearId=$linearId, created=$created, participants=$participants, admin=$admin, receivers=$receivers, status=$status)"
+        return "ChatMetaInfo(linearId=$linearId, created=$created, participants=$participants, admin=$admin, receivers=$receivers, status=$status)"
     }
 
 }

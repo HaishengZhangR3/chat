@@ -48,7 +48,7 @@ class AllChats : FlowLogic<List<StateAndRef<ChatMessage>>>() {
 @StartableByRPC
 class ChatAllMessages(private val chatId: UniqueIdentifier) : FlowLogic<List<StateAndRef<ChatMessage>>>() {
     @Suspendable
-    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getAllMessages(chatId)
+    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getVaultStates(chatId)
 }
 
 // get chat status: active, close proposed, closed

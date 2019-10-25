@@ -25,12 +25,12 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
     override fun call() {
         val (command, info) = otherSession.receive<List<Any>>().unwrap { it }
 
-        println("${ourIdentity.name} got a notice from Chat SDK, ID: ${info}, cmd: $command")
-        log.warn("${ourIdentity.name} got a notice from Chat SDK, ID: ${info}, cmd: $command")
+        println("${ourIdentity.name.organisation} got a notice from Chat SDK, ID: ${info}, cmd: $command")
 
-        val file = "/Users/haishengzhang/Documents/tmp/observer${Instant.now()}.log"
-        File(file).appendText("command: $command")
-        File(file).appendText("info: $info")
+        val file = "/Users/haishengzhang/Documents/tmp/observer_${ourIdentity.name.organisation}.log"
+        File(file).appendText("${ourIdentity.name.organisation} got a notice.\n")
+        File(file).appendText("command: ${command}.\n")
+        File(file).appendText("info: ${info}.\n")
 
         wsService.wsServer.getNotifyList().map {
             it.send(parseData(command = command as ChatCommand, info = info as List<ContractState>))
@@ -44,10 +44,19 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
                     val message = info.single() as ChatMessage
                     "New Message: " + chatInfoToString(message)
                 }
-                is CloseMeta            -> { info as ChatMetaInfo; "${info.linearId} is closed by ${info.admin}" }
+                is CloseMeta            -> {
+                    val meta = info.single() as ChatMetaInfo
+                    "${meta.linearId} is closed by ${meta.admin.name.organisation}"
+                }
                 // is CloseMessages: don't care, will update customers only after ChatMetaInfo closed
-                is AddParticipants      -> { info as ChatMetaInfo; "Added to chat ${info.linearId}." }
-                is RemoveParticipants   -> { info as ChatMetaInfo; "Removed from chat ${info.linearId}." }
+                is AddParticipants      -> {
+                    val meta = info.single() as ChatMetaInfo
+                    "Added to chat ${meta.linearId}."
+                }
+                is RemoveParticipants   -> {
+                    val meta = info.single() as ChatMetaInfo
+                    "Removed from chat ${meta.linearId}." }
+
                 else                    -> ""
             }
 

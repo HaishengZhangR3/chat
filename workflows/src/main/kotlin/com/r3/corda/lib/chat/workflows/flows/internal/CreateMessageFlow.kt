@@ -64,8 +64,9 @@ class CreateMessageFlowResponder(private val flowSession: FlowSession) : FlowLog
         val chatMessage = flowSession.receive<ChatMessage>().unwrap { it }
         val metaStateRef = chatVaultService.getMetaInfo(chatMessage.linearId)
 
+        val newChatMessage = chatMessage.copy(participants = listOf(ourIdentity))
         val txnBuilder = TransactionBuilder(notary = metaStateRef.state.notary)
-                .addOutputState(chatMessage.copy(participants = listOf(ourIdentity)))
+                .addOutputState(newChatMessage)
                 .addCommand(CreateMessage(), ourIdentity.owningKey)
                 .also {
                     it.verify(serviceHub)
@@ -75,7 +76,7 @@ class CreateMessageFlowResponder(private val flowSession: FlowSession) : FlowLog
         serviceHub.recordTransactions(signedTxn)
 
         // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = listOf(metaStateRef.state.data, chatMessage), command = CreateMessage()))
+        subFlow(ChatNotifyFlow(info = listOf(chatMessage), command = CreateMessage()))
         return signedTxn.coreTransaction.outRefsOfType<ChatMessage>().single()
     }
 }

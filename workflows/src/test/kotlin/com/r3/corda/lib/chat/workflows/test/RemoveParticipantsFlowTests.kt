@@ -79,9 +79,16 @@ class RemoveParticipantsFlowTests {
         Assert.assertEquals(chatInfosInVaultB.size, 1)
         Assert.assertEquals(chatInfosInVaultC.size, 0)
 
+        val oldParticipants = chatInB.participants
+        val expectedParticipants = oldParticipants - nodeC.info.legalIdentities.single()
+        val newParticipants = chatInfosInVaultA.single().state.data.participants
+
+        Assert.assertTrue(expectedParticipants.size == newParticipants.size)
+        Assert.assertTrue((expectedParticipants - newParticipants).size == 0)
+        Assert.assertTrue((newParticipants - expectedParticipants).size == 0)
+
         Assert.assertEquals(
                 (chatInfosInVaultA.map { it.state.data.linearId }
-                        + chatInfosInVaultB.map { it.state.data.linearId }
                         + chatInfosInVaultB.map { it.state.data.linearId })
                         .distinct().size,
                 1
