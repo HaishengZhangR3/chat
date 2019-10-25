@@ -24,9 +24,10 @@ class ReplyChatFlow(
     override fun call(): StateAndRef<ChatMessage> {
         val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
 
+        val metaInfo = metaInfoStateAndRef.state.data
         return subFlow(CreateMessageFlow(
-                chatId = metaInfoStateAndRef.state.data.linearId,
-                receivers = metaInfoStateAndRef.state.data.receivers,
+                chatId = metaInfo.linearId,
+                receivers = metaInfo.receivers + metaInfo.admin - ourIdentity,
                 subject = subject,
                 content = content
         ))

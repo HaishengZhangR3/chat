@@ -1,5 +1,6 @@
 package com.r3.corda.lib.chat.workflows.test
 
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
@@ -57,15 +58,15 @@ class ReplyChatFlowTests {
         val txnNew = newChatFlow.getOrThrow()
         val newChatInfo = txnNew.state.data
 
-        val newChatInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
-        val newChatInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val newChatMetaInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val newChatMetaInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(
                 ReplyChatFlow(
                         subject = "reply subject",
                         content = "reply content",
-                        chatId = newChatInfoB.linearId
+                        chatId = newChatMetaInfoA.linearId
                 )
         )
 
@@ -74,36 +75,52 @@ class ReplyChatFlowTests {
         val replyChatMessage = chatMessageStateRef.state.data
 
         // the reply chat id === thread id
-        Assert.assertTrue(replyChatMessage.linearId == newChatInfoB.linearId)
+        Assert.assertTrue(replyChatMessage.linearId == newChatMetaInfoB.linearId)
 
-        // there are one chat on ledge in each node
-        val allChatsInVaultA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        val allChatsInVaultB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
-        Assert.assertTrue(allChatsInVaultA.size == 2)
-        Assert.assertTrue(allChatsInVaultB.size == 2)
+        // there are one chat meta on ledge in each node
+        val replyChatMetaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val replyChatMetaStateRefB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        Assert.assertTrue(replyChatMetaStateRefA.size == 1)
+        Assert.assertTrue(replyChatMetaStateRefB.size == 1)
 
-        val replyChatInfoA = allChatsInVaultA.sortedByDescending { it.state.data.created }.first().state.data
-        val replyChatInfoB = allChatsInVaultB.sortedByDescending { it.state.data.created }.first().state.data
+        val replyChatMetaA = replyChatMetaStateRefA.single().state.data
+        val replyChatMetaB = replyChatMetaStateRefB.single().state.data
 
         // replied chat should be newer than created chat
         val newChatDate = newChatInfo.created
-        val replyChatDate = replyChatMessage.created
-        Assert.assertTrue(newChatDate < replyChatDate)
+        val replyChatMetaDate = replyChatMessage.created
+        Assert.assertTrue(newChatDate < replyChatMetaDate)
+
+        // there are two chat messages on ledge in each node
+        val chatMessageStateRefA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states
+        val chatMessageStateRefB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states
+        Assert.assertTrue(chatMessageStateRefA.size == 2)
+        Assert.assertTrue(chatMessageStateRefB.size == 2)
+
+        val chatMessageA = chatMessageStateRefA.sortedByDescending { it.state.data.created }.first().state.data
+        val chatMessageB = chatMessageStateRefB.sortedByDescending { it.state.data.created }.first().state.data
+
+        // replied chat should be newer than created chat
+        val newChatMsgDate = newChatInfo.created
+        val replyChatMsgDate = chatMessageA.created
+        Assert.assertTrue(newChatMsgDate < replyChatMsgDate)
 
         // all of them have same id
         Assert.assertEquals(listOf(newChatInfo.linearId,
-                newChatInfoA.linearId,
-                newChatInfoB.linearId,
+                newChatMetaInfoA.linearId,
+                newChatMetaInfoB.linearId,
                 replyChatMessage.linearId,
-                replyChatInfoA.linearId,
-                replyChatInfoB.linearId
+                replyChatMetaA.linearId,
+                replyChatMetaB.linearId,
+                chatMessageA.linearId,
+                chatMessageB.linearId
                 ).toSet().size,
                 1)
 
 
         // same chat in two nodes should have diff participants
-        val participantsA = replyChatInfoA.participants
-        val participantsB = replyChatInfoB.participants
+        val participantsA = chatMessageA.participants
+        val participantsB = chatMessageB.participants
         Assert.assertEquals(participantsA.size,1)
         Assert.assertEquals(participantsB.size,1)
 
