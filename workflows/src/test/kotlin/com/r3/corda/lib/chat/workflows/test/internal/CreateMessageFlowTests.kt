@@ -1,8 +1,9 @@
 package com.r3.corda.lib.chat.workflows.test.internal
 
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
+import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.SendMessageFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.CreateMessageFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -16,7 +17,7 @@ import org.junit.Before
 import org.junit.Test
 
 // @todo: all tests to add details
-class SendMessageFlowTests {
+class CreateMessageFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -50,24 +51,22 @@ class SendMessageFlowTests {
 
         // 1 create one
         val newChatFlow = nodeA.startFlow(CreateChatFlow(
-                "subject",
-                "content",
-                null,
-                listOf(nodeB.info.legalIdentities.single())
+                subject = "subject",
+                content = "content",
+                receivers = listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
         val txnNew = newChatFlow.getOrThrow()
         val newChatInfo = txnNew.state.data
 
-        val newChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
-        val newChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+        val newChatsInVaultA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
+        val newChatsInVaultB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single().state.data
 
         // 2 send a message to the chat
         val sendFlow = nodeB.startFlow(
-                SendMessageFlow(
+                CreateMessageFlow(
                         subject = "subjectxxx",
                         content = "contentxxx",
-                        receivers = listOf(nodeA.info.legalIdentities.single()),
                         chatId = newChatInfo.linearId
                 )
         )
@@ -76,8 +75,8 @@ class SendMessageFlowTests {
         sendFlow.getOrThrow()
 
         // there are two chat on ledge in each node
-        val allChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
-        val allChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
+        val allChatsInVaultA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val allChatsInVaultB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
         Assert.assertTrue(allChatsInVaultA.size == 2)
         Assert.assertTrue(allChatsInVaultB.size == 2)
 

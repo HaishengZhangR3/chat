@@ -1,9 +1,8 @@
 package com.r3.corda.lib.chat.workflows.test.internal
 
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.ShutDownChatFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.RemoveParticipantsFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -16,7 +15,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class ShutDownChatFlowTests {
+class RemoveParticipantsFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -48,47 +47,44 @@ class ShutDownChatFlowTests {
     }
 
     @Test
-    fun `should be possible to propose to add participants to a chat`() {
+    fun `should be possible to remove participants from a chat`() {
 
         // 1 create one
         val newChatFlow = nodeA.startFlow(CreateChatFlow(
-                "subject",
-                "content",
-                null,
-                listOf(nodeB.info.legalIdentities.single())
+                subject = "subject",
+                content = "content",
+                receivers = listOf(nodeB.info.legalIdentities.single(), nodeC.info.legalIdentities.single())
         ))
         network.runNetwork()
         newChatFlow.getOrThrow()
 
-        val chatInB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+        val chatInB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
-        // 2 reply the chat
-        val replyFlow = nodeB.startFlow(
-                ReplyChatFlow(
-                        content ="content",
-                        attachment = null,
+        // 2. remove participants
+        val removeParticipantsFlow = nodeB.startFlow(
+                RemoveParticipantsFlow(
+                        toRemove = listOf(nodeC.info.legalIdentities.single()),
                         chatId = chatInB.linearId
                 )
         )
 
         network.runNetwork()
-        replyFlow.getOrThrow()
+        removeParticipantsFlow.getOrThrow()
 
-        // 3. shut down B
-        val shutdownA = nodeA.startFlow(
-                ShutDownChatFlow(
-                        chatId = chatInB.linearId,
-                        toList = listOf(nodeB.info.legalIdentities.single())
-                )
+        // chatinfo should not be consumed in A,B, and no one should be in C
+        val chatInfosInVaultA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val chatInfosInVaultB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val chatInfosInVaultC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        Assert.assertEquals(chatInfosInVaultA.size, 1)
+        Assert.assertEquals(chatInfosInVaultB.size, 1)
+        Assert.assertEquals(chatInfosInVaultC.size, 1)
+
+        Assert.assertEquals(
+                (chatInfosInVaultA.map { it.state.data.linearId }
+                        + chatInfosInVaultB.map { it.state.data.linearId }
+                        + chatInfosInVaultB.map { it.state.data.linearId })
+                        .distinct().size,
+                1
         )
-        network.runNetwork()
-        shutdownA.getOrThrow()
-
-        // chatinfo should be consumed in B
-        val chatInfosInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
-        val chatInfosInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
-        Assert.assertEquals(chatInfosInVaultA.size, 2)
-        Assert.assertEquals(chatInfosInVaultB.size, 0)
-
     }
 }

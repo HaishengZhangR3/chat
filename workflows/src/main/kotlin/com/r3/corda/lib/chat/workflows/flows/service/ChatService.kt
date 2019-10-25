@@ -1,9 +1,7 @@
 package com.r3.corda.lib.chat.workflows.flows.service
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.contracts.states.CloseChatState
-import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -13,7 +11,6 @@ import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
-import java.time.Instant
 
 // @todo: support page: PageSpecification
 
@@ -22,25 +19,10 @@ sealed class ChatStatus {
     object ACTIVE : ChatStatus() {
         override fun toString() = "Active"
     }
-    object CLOSE_PROPOSED : ChatStatus() {
-        override fun toString() = "Close Proposed"
-    }
-    object CLOSE_AGREED : ChatStatus(){
-        override fun toString() = "Close Agreed"
-    }
     object CLOSED : ChatStatus(){
         override fun toString() = "Closed"
     }
 }
-
-@CordaSerializable
-data class ChatQuerySpec(
-        val chatId: UniqueIdentifier? = null,
-        val initiator: Party? = null,
-        val subject: String? = null,    // iLike subject, no wildcard
-        val createdTimeFrom: Instant? = null,
-        val createdTimeUntil: Instant? = null  // range = [fromTime, toTime)
-)
 
 // get ID of all chats
 @InitiatingFlow
@@ -55,41 +37,18 @@ class AllChatIDs() : FlowLogic<List<UniqueIdentifier>>() {
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class AllChats : FlowLogic<List<StateAndRef<ChatInfo>>>() {
+class AllChats : FlowLogic<List<StateAndRef<ChatMessage>>>() {
     @Suspendable
-    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getAllChats()
-}
-
-
-// get all chats with filter applied
-@InitiatingFlow
-@StartableByService
-@StartableByRPC
-class AllChatsBy(private val chatQuerySpec: ChatQuerySpec) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
-    @Suspendable
-    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getAllChatsBy(chatQuerySpec)
+    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getAllChats()
 }
 
 // get all messages for one single chat by ID
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class ChatAllMessages(private val chatId: UniqueIdentifier) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
+class ChatAllMessages(private val chatId: UniqueIdentifier) : FlowLogic<List<StateAndRef<ChatMessage>>>() {
     @Suspendable
-    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getAllMessages(chatId)
-}
-
-// get all messages for a chat by:
-//  from,
-//  subject,
-//  time range (newer than [datetime], older than [another datetime]),
-//  and/or combination of above
-@InitiatingFlow
-@StartableByService
-@StartableByRPC
-class ChatAllMessagesBy(private val chatQuerySpec: ChatQuerySpec) : FlowLogic<List<StateAndRef<ChatInfo>>>() {
-    @Suspendable
-    override fun call(): List<StateAndRef<ChatInfo>> = chatVaultService.getChatMessagesBy(chatQuerySpec)
+    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getAllMessages(chatId)
 }
 
 // get chat status: active, close proposed, closed
@@ -109,26 +68,7 @@ class ChatCurrentStatus(private val chatId: UniqueIdentifier) : FlowLogic<ChatSt
 class ChatParticipants(private val chatId: UniqueIdentifier) : FlowLogic<List<Party>>() {
     @Suspendable
     override fun call(): List<Party> {
-        val headMessage = chatVaultService.getHeadMessage(chatId)
-        return headMessage.state.data.let { it.receivers + it.sender }.distinct()
+        val headMessage = chatVaultService.getMetaInfo(chatId)
+        return headMessage.state.data.let { it.receivers + it.admin }.distinct()
     }
-}
-
-
-// get close proposals for a chat
-@InitiatingFlow
-@StartableByService
-@StartableByRPC
-class ChatCloseProposal(private val chatId: UniqueIdentifier) : FlowLogic<CloseChatState>() {
-    @Suspendable
-    override fun call(): CloseChatState = chatVaultService.getCloseChatStateProposal(chatId)
-}
-
-// get participant updating proposals for a chat
-@InitiatingFlow
-@StartableByService
-@StartableByRPC
-class ChatUpdateParticipantsProposal(private val chatId: UniqueIdentifier) : FlowLogic<UpdateParticipantsState>() {
-    @Suspendable
-    override fun call(): UpdateParticipantsState = chatVaultService.getUpdateParticipantsProposal(chatId)
 }

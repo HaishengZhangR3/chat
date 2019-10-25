@@ -103,11 +103,7 @@ function openTab(evt, cityName) {
 <div id="Close" class="tabcontent">
   <div>ID: <input size="50" type="text" id="closeChatId" maxlength="100"/></div>
   <div>
-    <button onclick="proposeCloseChat()">propose</button>
-    <button onclick="agreeCloseChat()">agree</button>
-    <button onclick="rejectCloseChat()">reject</button>
     <button onclick="closeChat()">close</button>
-    <button onclick="getChatCloseProposal()">get proposal</button>
   </div>
 </div>
 
@@ -115,11 +111,7 @@ function openTab(evt, cityName) {
   <div>ID: <input size="50" type="text" id="addChatId" maxlength="100"/></div>
   <div>participants: <input size="50" type="text" id="addParticipants" maxlength="100"/></div>
   <div>
-    <button onclick="proposeAddParticipants()">propose</button>
-    <button onclick="agreeAddParticipants()">agree</button>
-    <button onclick="rejectAddParticipants()">reject</button>
     <button onclick="addParticipants()">add</button>
-    <button onclick="getAddParticipantsProposal()">get proposal</button>
   </div>
 </div>
 
@@ -127,11 +119,7 @@ function openTab(evt, cityName) {
   <div>ID: <input size="50" type="text" id="removeChatId" maxlength="100"/></div>
   <div>participants: <input size="50" type="text" id="removeParticipants" maxlength="100"/></div>
   <div>
-    <button onclick="proposeRemoveParticipants()">propose</button>
-    <button onclick="agreeRemoveParticipants()">agree</button>
-    <button onclick="rejectRemoveParticipants()">reject</button>
     <button onclick="removeParticipants()">remove</button>
-    <button onclick="getRemoveParticipantsProposal()">get proposal</button>
   </div>
 </div>
 
@@ -242,35 +230,10 @@ function replyChat() {
   post("/chat/" + getInput("replyChatId"), getInput("replyContent"))
 }
 
-function proposeCloseChat() {
-  post("/chat/" + getInput("closeChatId") + "/close/propose")
-}
-function agreeCloseChat() {
-  post("/chat/" + getInput("closeChatId") + "/close/agree")
-}
-function rejectCloseChat() {
-  post("/chat/" + getInput("closeChatId") + "/close/reject")
-}
 function closeChat() {
   post("/chat/" + getInput("closeChatId") + "/close")
 }
-function getChatCloseProposal() {
-  get("/chat/" + getInput("closeChatId") + "/proposal/closeChat")
-}
 
-
-function proposeAddParticipants() {
-  var data = JSON.stringify(
-    getInput("addParticipants").split(",")
-  );
-  post("/chat/" + getInput("addChatId") + "/participants/add/propose", data)
-}
-function agreeAddParticipants() {
-  post("/chat/" + getInput("addChatId") + "/participants/add/agree")
-}
-function rejectAddParticipants() {
-  post("/chat/" + getInput("addChatId") + "/participants/add/reject")
-}
 function addParticipants() {
   post("/chat/" + getInput("addChatId") + "/participants/add")
 }
@@ -278,26 +241,9 @@ function getAddParticipantsProposal() {
   get("/chat/" + getInput("addChatId") + "/proposal/updateParticipants")
 }
 
-
-function proposeRemoveParticipants() {
-  var data = JSON.stringify(
-    getInput("removeParticipants").split(",")
-  );
-  post("/chat/" + getInput("removeChatId") + "/participants/remove/propose", data)
-}
-function agreeRemoveParticipants() {
-  post("/chat/" + getInput("removeChatId") + "/participants/remove/agree")
-}
-function rejectRemoveParticipants() {
-  post("/chat/" + getInput("removeChatId") + "/participants/remove/reject")
-}
 function removeParticipants() {
   post("/chat/" + getInput("removeChatId") + "/participants/remove")
 }
-function getRemoveParticipantsProposal() {
-  get("/chat/" + getInput("removeChatId") + "/proposal/updateParticipants")
-}
-
 
 function getAllChatIDs() {
   get("/chats/ids")

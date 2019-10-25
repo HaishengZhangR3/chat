@@ -7,7 +7,7 @@ import net.corda.testing.node.ledger
 import org.junit.*
 
 // @todo: add tests for contract and state
-class TestChatInfoContract {
+class TestChatMetaInfoContract {
 
     class DummyCommand : TypeOnlyCommandData()
     private var ledgerServices = MockServices(listOf("net.corda.training"))

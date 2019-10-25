@@ -1,6 +1,6 @@
 package com.r3.corda.lib.chat.workflows.test
 
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
@@ -49,37 +49,36 @@ class ReplyChatFlowTests {
 
         // 1 create one
         val newChatFlow = nodeA.startFlow(CreateChatFlow(
-                "subject",
-                "content",
-                null,
-                listOf(nodeB.info.legalIdentities.single())
+                subject = "subject",
+                content = "content",
+                receivers = listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
         val txnNew = newChatFlow.getOrThrow()
         val newChatInfo = txnNew.state.data
 
-        val newChatInfoA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
-        val newChatInfoB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single().state.data
+        val newChatInfoA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
+        val newChatInfoB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(
                 ReplyChatFlow(
-                        content = "content",
-                        attachment = null,
+                        subject = "reply subject",
+                        content = "reply content",
                         chatId = newChatInfoB.linearId
                 )
         )
 
         network.runNetwork()
-        val txnReply = replyFlow.getOrThrow()
-        val replyChatInfo = txnReply.coreTransaction.outputStates.single() as ChatInfo
+        val chatMessageStateRef = replyFlow.getOrThrow()
+        val replyChatMessage = chatMessageStateRef.state.data
 
         // the reply chat id === thread id
-        Assert.assertTrue(replyChatInfo.linearId == newChatInfoB.linearId)
+        Assert.assertTrue(replyChatMessage.linearId == newChatInfoB.linearId)
 
         // there are one chat on ledge in each node
-        val allChatsInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states
-        val allChatsInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states
+        val allChatsInVaultA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
+        val allChatsInVaultB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states
         Assert.assertTrue(allChatsInVaultA.size == 2)
         Assert.assertTrue(allChatsInVaultB.size == 2)
 
@@ -88,14 +87,14 @@ class ReplyChatFlowTests {
 
         // replied chat should be newer than created chat
         val newChatDate = newChatInfo.created
-        val replyChatDate = replyChatInfo.created
+        val replyChatDate = replyChatMessage.created
         Assert.assertTrue(newChatDate < replyChatDate)
 
         // all of them have same id
         Assert.assertEquals(listOf(newChatInfo.linearId,
                 newChatInfoA.linearId,
                 newChatInfoB.linearId,
-                replyChatInfo.linearId,
+                replyChatMessage.linearId,
                 replyChatInfoA.linearId,
                 replyChatInfoB.linearId
                 ).toSet().size,

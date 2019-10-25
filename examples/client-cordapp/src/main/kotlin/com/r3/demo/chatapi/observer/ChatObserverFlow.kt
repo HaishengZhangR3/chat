@@ -2,8 +2,8 @@ package com.r3.demo.chatapi.observer
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.*
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.contracts.states.UpdateParticipantsState
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
+import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import net.corda.core.contracts.ContractState
 import net.corda.core.flows.FlowLogic
@@ -22,7 +22,7 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
     }
 
     @Suspendable
-    override fun call(): Unit {
+    override fun call() {
         val (command, info) = otherSession.receive<List<Any>>().unwrap { it }
 
         println("${ourIdentity.name} got a notice from Chat SDK, ID: ${info}, cmd: $command")
@@ -39,26 +39,19 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
 
     private fun parseData(command: ChatCommand, info: ContractState): String =
             when (command) {
-                is Create               -> "New Message: " + chatInfoToString(info as ChatInfo)
-                is Reply                -> "Replied Message: " + chatInfoToString(info as ChatInfo)
-                is ShareHistory         -> "Shared Message: " + chatInfoToString(info as ChatInfo)
-                is Close                -> { info as ChatInfo; "${info.linearId} is closed by ${info.sender}" }
-                is UpdateParticipants   -> { info as UpdateParticipantsState; updateParticipantsInfoToString(info) }
+                //todo: is CreateMeta               -> "New Chat Thread: " + chatInfoToString(info as ChatMessage)
+                is CreateMessage            -> "New Message: " + chatInfoToString(info as ChatMessage)
+                is CloseMeta            -> { info as ChatMetaInfo; "${info.linearId} is closed by ${info.admin}" }
+                is AddParticipants      -> { info as ChatMetaInfo; "Added to chat ${info.linearId}." }
+                is RemoveParticipants   -> { info as ChatMetaInfo; "Removed from chat ${info.linearId}." }
                 else                    -> ""
             }
 
-    private fun chatInfoToString(info: ChatInfo) =
+    private fun chatInfoToString(info: ChatMessage) =
             """
                 ChatId: ${info.linearId},
                 Sender: ${info.sender.name.organisation},
                 Subject: ${info.subject},
                 Content: ${info.content}
             """.trimIndent()
-
-    private fun updateParticipantsInfoToString(info: UpdateParticipantsState) =
-            when {
-                info.toAdd.isNotEmpty()     -> "${info.toAdd} have been added to chat ${info.linearId}."
-                info.toRemove.isNotEmpty()  -> "${info.toRemove} have been removed to chat ${info.linearId}."
-                else                        -> ""
-            }
 }

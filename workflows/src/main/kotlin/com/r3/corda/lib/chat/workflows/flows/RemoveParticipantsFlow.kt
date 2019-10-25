@@ -1,76 +1,29 @@
 package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsAgreeFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsProposeFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.UpdateParticipantsRejectFlow
+import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.workflows.flows.internal.RemoveParticipantsFlow
+import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.identity.Party
-import net.corda.core.transactions.SignedTransaction
 
-
-//@todo: add test cases for participants removal
-
-@InitiatingFlow
-@StartableByService
-@StartableByRPC
-class RemoveParticipantsProposeFlow(
-        private val chatId: UniqueIdentifier,
-        private val toRemove: List<Party>
-) : FlowLogic<SignedTransaction>() {
-    @Suspendable
-    override fun call(): SignedTransaction {
-        return subFlow(UpdateParticipantsProposeFlow(
-                chatId = chatId,
-                toRemove = toRemove
-        ))
-    }
-}
-
-@InitiatingFlow
-@StartableByService
-@StartableByRPC
-class RemoveParticipantsAgreeFlow(
-        private val chatId: UniqueIdentifier
-) : FlowLogic<SignedTransaction>() {
-    @Suspendable
-    override fun call(): SignedTransaction {
-        return subFlow(UpdateParticipantsAgreeFlow(
-                chatId = chatId
-        ))
-    }
-}
-
-@InitiatingFlow
-@StartableByService
-@StartableByRPC
-class RemoveParticipantsRejectFlow(
-        private val chatId: UniqueIdentifier
-) : FlowLogic<SignedTransaction>() {
-    @Suspendable
-    override fun call(): SignedTransaction {
-        return subFlow(UpdateParticipantsRejectFlow(
-                chatId = chatId
-        ))
-    }
-}
 
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
 class RemoveParticipantsFlow(
-        private val chatId: UniqueIdentifier
-) : FlowLogic<SignedTransaction>() {
+        private val chatId: UniqueIdentifier,
+        private val toRemove: List<Party>
+) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
     @Suspendable
-    override fun call(): SignedTransaction {
-        return subFlow(UpdateParticipantsFlow(
+    override fun call(): StateAndRef<ChatMetaInfo> {
+        return subFlow(RemoveParticipantsFlow(
                 chatId = chatId,
-                force = false
+                toRemove = toRemove
         ))
     }
 }

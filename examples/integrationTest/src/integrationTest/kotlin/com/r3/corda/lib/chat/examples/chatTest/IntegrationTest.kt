@@ -1,8 +1,11 @@
 package com.r3.corda.lib.chat.examples.chatTest
 
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
-import com.r3.corda.lib.chat.contracts.states.CloseChatState
-import com.r3.corda.lib.chat.workflows.flows.*
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
+import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.workflows.flows.AddParticipantsFlow
+import com.r3.corda.lib.chat.workflows.flows.CloseChatFlow
+import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.ReplyChatFlow
 import com.r3.corda.lib.chat.workflows.flows.service.*
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -20,7 +23,6 @@ import net.corda.testing.driver.driver
 import net.corda.testing.node.TestCordapp
 import org.junit.Assert
 import org.junit.Test
-import java.time.Instant
 
 
 // @todo: add remove participants cases
@@ -61,76 +63,43 @@ class IntegrationTest {
 
     fun NodeHandle.legalIdentity() = nodeInfo.legalIdentities.single()
 
-    private fun createChat(who: NodeHandle, toList: List<Party>, any: String): ChatInfo {
+    private fun createChat(who: NodeHandle, toList: List<Party>, any: String): ChatMessage {
         val createChat = who.rpc.startFlow(
                 ::CreateChatFlow,
                 "Sample Topic $any",
                 "Some sample content created $any",
-                null,
                 toList
         ).returnValue.getOrThrow()
         return createChat.state.data
     }
 
-    private fun replyChat(who: NodeHandle, chatId: UniqueIdentifier, any: String): ChatInfo {
+    private fun replyChat(who: NodeHandle, chatId: UniqueIdentifier, any: String): ChatMessage {
         val replyChat = who.rpc.startFlow(
                 ::ReplyChatFlow,
                 chatId,
-                "Some sample content replied $any",
-                null
+                "some subject replied $any",
+                "Some sample content replied $any"
         ).returnValue.getOrThrow()
 
-        return replyChat.coreTransaction.outputStates.single() as ChatInfo
+        return replyChat.state.data
     }
 
-    private fun closeChat(proposer: NodeHandle, agreeer: List<NodeHandle>, chatId: UniqueIdentifier): Any {
-        log.warn("***** Propose close *****")
-        val propose = proposer.rpc.startFlow(
-                ::CloseChatProposeFlow,
-                chatId
-        ).returnValue.getOrThrow()
-
-        // @todo: call ChatCloseProposal to get close proposal and check
-
-        log.warn("***** Close proposal agreed *****")
-        val agree = agreeer.map {
-            it.rpc.startFlow(
-                    ::CloseChatAgreeFlow,
-                    chatId
-            ).returnValue.getOrThrow()
-        }
-
+    private fun closeChat(proposer: NodeHandle, chatId: UniqueIdentifier): Any {
         log.warn("***** Do final close *****")
         val doIt = proposer.rpc.startFlow(
                 ::CloseChatFlow,
-                chatId,
-                false
+                chatId
         ).returnValue.getOrThrow()
 
         return doIt
     }
 
-    private fun addParticipantsToChat(proposer: NodeHandle, agreeer: List<NodeHandle>, toAdd: List<Party>, chatId: UniqueIdentifier): Any {
-        log.warn("***** Propose add *****")
-        val propose = proposer.rpc.startFlow(
-                ::AddParticipantsProposeFlow,
-                chatId,
-                toAdd,
-                true
-        ).returnValue.getOrThrow()
-
-        log.warn("***** Add proposal agreed *****")
-        val agree = agreeer.map {
-            it.rpc.startFlow(
-                    ::AddParticipantsAgreeFlow,
-                    chatId
-            ).returnValue.getOrThrow()
-        }
-
+    private fun addParticipantsToChat(proposer: NodeHandle, toAdd: List<Party>, chatId: UniqueIdentifier): Any {
         log.warn("***** Do final add *****")
         val doIt = proposer.rpc.startFlow(
                 ::AddParticipantsFlow,
-                chatId
+                chatId,
+                toAdd
         ).returnValue.getOrThrow()
 
         return doIt
@@ -144,7 +113,7 @@ class IntegrationTest {
         return allChatIDsFromVault
     }
 
-    private fun getAllChats(node: NodeHandle): List<StateAndRef<ChatInfo>> {
+    private fun getAllChats(node: NodeHandle): List<StateAndRef<ChatMessage>> {
         log.warn("***** All chats and messages *****")
         val allChatsFromVault = node.rpc.startFlow(
                 ::AllChats
@@ -153,29 +122,11 @@ class IntegrationTest {
 
     }
 
-    private fun getAllChatsBy(node: NodeHandle, querySpec: ChatQuerySpec): List<StateAndRef<ChatInfo>> {
-        log.warn("***** All chats and messages with filter $querySpec applied *****")
-        val allChatsFromVault = node.rpc.startFlow(
-                ::AllChatsBy,
-                querySpec
-        ).returnValue.getOrThrow()
-        return allChatsFromVault
-    }
-
-    private fun getChatAllMessages(node: NodeHandle, chatId: UniqueIdentifier): List<StateAndRef<ChatInfo>> {
+    private fun getChatAllMessages(node: NodeHandle, chatId: UniqueIdentifier): List<StateAndRef<ChatMessage>> {
         log.warn("***** All messages for one single chat by ID: $chatId *****")
         val chatAllMessagesFromVault = node.rpc.startFlow(
                 ::ChatAllMessages,
                 chatId
-        ).returnValue.getOrThrow()
-        return chatAllMessagesFromVault
-    }
-
-    private fun getChatMessagesBy(node: NodeHandle, querySpec: ChatQuerySpec): List<StateAndRef<ChatInfo>> {
-        log.warn("***** All messages for one single chat with filter $querySpec applied *****")
-        val chatAllMessagesFromVault = node.rpc.startFlow(
-                ::ChatAllMessagesBy,
-                querySpec
         ).returnValue.getOrThrow()
         return chatAllMessagesFromVault
     }
@@ -199,7 +150,7 @@ class IntegrationTest {
     }
 
     @Test
-    fun `Corda Chat supports create, reply, close proposal,agree,reject and finilise`() {
+    fun `Corda Chat supports create, reply, close`() {
         driver(driverParameters) {
             log.warn("***** Chat integration test starting ....... *****")
             val (A, B, C) = nodeParams.map { params -> startNode(params) }.transpose().getOrThrow()
@@ -213,21 +164,16 @@ class IntegrationTest {
             val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
             log.warn("***** The chat replied from B: ${chatOnB.linearId} *****")
 
-            log.warn("***** Propose/agree/do close from B *****")
-            closeChat(proposer = B, agreeer = listOf(A), chatId = chatOnA.linearId)
+            log.warn("*****  close from B *****")
+            closeChat(proposer = B, chatId = chatOnA.linearId)
 
             log.warn("***** Chat ${chatOnA.linearId} closed *****")
 
             log.warn("**** Now let's check the closed chat *****")
-            val chatsInA = A.rpc.vaultQuery(ChatInfo::class.java).states
-            val chatsInB = B.rpc.vaultQuery(ChatInfo::class.java).states
+            val chatsInA = A.rpc.vaultQuery(ChatMetaInfo::class.java).states
+            val chatsInB = B.rpc.vaultQuery(ChatMetaInfo::class.java).states
             Assert.assertTrue("Should not be any chat in A", chatsInA.isEmpty())
             Assert.assertTrue("Should not be any chat in B", chatsInB.isEmpty())
-
-            val closeStateA = A.rpc.vaultQuery(CloseChatState::class.java).states
-            val closeStateB = B.rpc.vaultQuery(CloseChatState::class.java).states
-            Assert.assertTrue("Should not be close states in A", closeStateA.isEmpty())
-            Assert.assertTrue("Should not be close states in B", closeStateB.isEmpty())
 
             log.warn("**** All passed, happy *****")
         }
@@ -235,7 +181,7 @@ class IntegrationTest {
 
 
     @Test
-    fun `Corda Chat supports participants updating proposal, agree, reject`() {
+    fun `Corda Chat supports participants updating`() {
 
         driver(driverParameters) {
             log.warn("***** Chat integration test starting ....... *****")
@@ -250,13 +196,13 @@ class IntegrationTest {
             val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
             log.warn("***** The chat replied from B: ${chatOnB.linearId} *****")
 
-            log.warn("***** Propose/agree/do add participants from B *****")
-            addParticipantsToChat(proposer = B, agreeer = listOf(A), toAdd = listOf(C.legalIdentity()), chatId = chatOnA.linearId)
+            log.warn("***** add participants from B *****")
+            addParticipantsToChat(proposer = B, toAdd = listOf(C.legalIdentity()), chatId = chatOnA.linearId)
 
             log.warn("**** Now let's check the chat *****")
-            val chatsInA = A.rpc.vaultQuery(ChatInfo::class.java).states
-            val chatsInB = B.rpc.vaultQuery(ChatInfo::class.java).states
-            val chatsInC = B.rpc.vaultQuery(ChatInfo::class.java).states
+            val chatsInA = A.rpc.vaultQuery(ChatMetaInfo::class.java).states
+            val chatsInB = B.rpc.vaultQuery(ChatMetaInfo::class.java).states
+            val chatsInC = B.rpc.vaultQuery(ChatMetaInfo::class.java).states
             Assert.assertTrue(chatsInA.isNotEmpty())
             Assert.assertTrue(chatsInB.isNotEmpty())
             Assert.assertTrue(chatsInC.isNotEmpty())
@@ -361,15 +307,6 @@ class IntegrationTest {
             Assert.assertTrue((idsAllChatsFromVault - howManyUniqueIdentifierA).isEmpty())
             Assert.assertTrue((howManyUniqueIdentifierA - idsAllChatsFromVault).isEmpty())
 
-            log.warn("***** All chats and messages with filter applied *****")
-            val allChatsSpec = ChatQuerySpec(
-                    initiator = A.legalIdentity(),
-                    subject = "%Sample Topic%"
-            )
-            val filteredChats = getAllChatsBy(A, allChatsSpec)
-            Assert.assertNotNull(filteredChats)
-            Assert.assertEquals(filteredChats.size, howManyChats) // only "howManyChats" chat/message initiated by A
-
             // check message level information, take C as example
             val node = A
             val idList = howManyUniqueIdentifier.getOrDefault(node.nodeInfo.legalIdentities.first(), mutableSetOf())
@@ -382,18 +319,6 @@ class IntegrationTest {
                 chatAllMessagesFromVault.map {
                     log.warn("${it.state.data}")
                 }
-
-                log.warn("***** All messages for one single chat with filter applied *****")
-                val allMessagesSpec = ChatQuerySpec(
-                        chatId = id,
-                        initiator = node.legalIdentity(),
-                        subject = "%Sample Topic%",
-                        createdTimeFrom = Instant.now().minusSeconds(100L),
-                        createdTimeUntil = Instant.now().plusSeconds(1L)
-                )
-                val filteredMessages = getChatMessagesBy(node, allMessagesSpec)
-                Assert.assertNotNull(filteredMessages)
-                Assert.assertEquals(filteredMessages.size, 1)
 
                 log.warn("***** chat status: active, close proposed, closed for one chat by ID *****")
                 val chatStatusFromVault = getChatCurrentStatus(node, id)
@@ -426,8 +351,8 @@ class IntegrationTest {
             val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
             log.warn("***** The chat ${chatOnB.linearId} is replied from B *****")
 
-            log.warn("***** Propose/agree/do add participants from B *****")
-            addParticipantsToChat(proposer = B, agreeer = listOf(A), toAdd = listOf(C.legalIdentity()), chatId = chatOnA.linearId)
+            log.warn("***** add participants from B *****")
+            addParticipantsToChat(proposer = B, toAdd = listOf(C.legalIdentity()), chatId = chatOnA.linearId)
             log.warn("***** Participant ${C.legalIdentity()} is add to chat ${chatOnB.linearId} *****")
 
             log.warn("***** All chatIDs *****")
@@ -438,30 +363,9 @@ class IntegrationTest {
             val allChatsFromVault = getAllChats(A)
             log.warn("***** All chats: $allChatsFromVault *****")
 
-            log.warn("***** All chats and messages with filter applied *****")
-            val allChatsSpec = ChatQuerySpec(
-                    initiator = A.legalIdentity(),
-                    subject = "%Sample Topic%",
-                    createdTimeFrom = Instant.now().minusSeconds(100L),
-                    createdTimeUntil = Instant.now().plusSeconds(1L)
-            )
-            val filteredChats = getAllChatsBy(A, allChatsSpec)
-            log.warn("***** Filtered chats: $filteredChats, filer condition: $allChatsSpec *****")
-
             log.warn("***** All messages for one single chat by ID: ${chatOnA.linearId} *****")
             val chatAllMessagesFromVault = getChatAllMessages(A, chatOnA.linearId)
             log.warn("***** All messages for ${chatOnA.linearId} are: $chatAllMessagesFromVault *****")
-
-            log.warn("***** All messages for one single chat with filter applied *****")
-            val allChatMessagesSpec = ChatQuerySpec(
-                    chatId = chatOnA.linearId,
-                    initiator = A.legalIdentity(),
-                    subject = "%Sample Topic%",
-                    createdTimeFrom = Instant.now().minusSeconds(100L),
-                    createdTimeUntil = Instant.now().plusSeconds(1L)
-            )
-            val filteredChatMessages = getChatMessagesBy(A, allChatMessagesSpec)
-            log.warn("***** Filtered messages: $filteredChatMessages, filer condition: $allChatMessagesSpec *****")
 
             log.warn("***** Chat status: active, close proposed, closed for one chat by ID *****")
             val chatStatusFromVault = getChatCurrentStatus(B, chatOnA.linearId)
@@ -471,8 +375,8 @@ class IntegrationTest {
             val chatParticipantsFromVault = getChatParticipants(C, chatOnA.linearId)
             log.warn("***** The participants for ${chatOnA.linearId} are: $chatParticipantsFromVault *****")
 
-            log.warn("***** Propose/agree/do close from B *****")
-            closeChat(proposer = B, agreeer = listOf(A, C), chatId = chatOnA.linearId)
+            log.warn("***** close from B *****")
+            closeChat(proposer = B, chatId = chatOnA.linearId)
             log.warn("***** Chat ${chatOnA.linearId} is closed *****")
 
             log.warn("**** All passed, happy *****")

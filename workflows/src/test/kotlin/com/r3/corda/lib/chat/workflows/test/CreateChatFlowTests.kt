@@ -1,6 +1,7 @@
 package com.r3.corda.lib.chat.workflows.test
 
-import com.r3.corda.lib.chat.contracts.states.ChatInfo
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
+import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
@@ -54,20 +55,19 @@ class CreateChatFlowTests {
     fun `should be possible to create a chat`() {
 
         val chatFlow = nodeA.startFlow(CreateChatFlow(
-                "subject",
-                "content",
-                null,
-                 listOf(nodeB.info.legalIdentities.single())
+                subject = "subject",
+                content = "content",
+                receivers = listOf(nodeB.info.legalIdentities.single())
         ))
         network.runNetwork()
         val txn = chatFlow.getOrThrow()
         val chatInfo = txn.state.data
 
-        val chatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatInfo::class.java).states.single()
+        val chatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single()
         Assert.assertTrue(chatInfo == chatInfoInVaultA.state.data)
 
         //check whether the created one in node B is same as that in the DB of host node A
-        val chatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatInfo::class.java).states.single()
+        val chatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single()
         Assert.assertTrue(chatInfoInVaultA.state.data.linearId == chatInfoInVaultB.state.data.linearId)
 
         // same chat in two nodes should have diff participants
