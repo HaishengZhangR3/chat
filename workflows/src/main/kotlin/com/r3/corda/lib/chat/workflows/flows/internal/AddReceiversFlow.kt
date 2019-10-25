@@ -23,43 +23,32 @@ class AddReceiversFlow(
 
     @Suspendable
     override fun call(): StateAndRef<ChatMetaInfo> {
-        val metaStateRef = chatVaultService.getMetaInfo(chatId)
-        val metaInfo = metaStateRef.state.data
 
-        val participants = (metaInfo.participants + toAdd).distinct()
-        val receivers = (metaInfo.receivers + toAdd - ourIdentity).distinct()
-        val newMetaInfo = metaInfo.copy(
-                participants = participants,
-                receivers = receivers
-        )
+        // get and consume all messages in vault
+        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
+        val metaInfo = metaInfoStateAndRef.state.data
+        if (ourIdentity != metaInfo.admin) {
+            throw FlowException("Only chat admin can add participants to chat.")
+        }
 
-        val txnBuilder = TransactionBuilder(notary = metaStateRef.state.notary)
-                .addInputState(metaStateRef)
-                .addOutputState(newMetaInfo)
-                .addCommand(AddParticipants(), receivers.map { it.owningKey })
-                .also { it.verify(serviceHub) }
+        // steps:
+        // 1. close current ChatMetaInfo, need (all) sign
+        subFlow(CloseMetaInfoFlow(chatId))
 
-        val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
-        val counterPartySession = receivers.map { initiateFlow(it) }
-        val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySession))
-        val txn = subFlow(FinalityFlow(collectSignTxn, counterPartySession))
+        // 2. create new ChatMetaInfo without removed parties, need (all - removed) sign
+        val newReceivers = metaInfo.receivers + toAdd
+        val txn = subFlow(CreateMetaInfoFlow(chatId, newReceivers))
 
-        // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = listOf(newMetaInfo), command = AddParticipants()))
+        subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = AddParticipants()))
 
-        return txn.coreTransaction.outRefsOfType<ChatMetaInfo>().single()
+        return txn
     }
 }
 
-/**
- * This is the flow which responds to create chat.
- */
 @InitiatedBy(AddReceiversFlow::class)
 class AddReceiversFlowResponder(private val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
-
     @Suspendable
     override fun call(): SignedTransaction {
-
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction) {

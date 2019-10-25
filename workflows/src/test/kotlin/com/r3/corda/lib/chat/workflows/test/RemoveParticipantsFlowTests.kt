@@ -1,4 +1,4 @@
-package com.r3.corda.lib.chat.workflows.test.internal
+package com.r3.corda.lib.chat.workflows.test
 
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
@@ -61,7 +61,7 @@ class RemoveParticipantsFlowTests {
         val chatInB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single().state.data
 
         // 2. remove participants
-        val removeParticipantsFlow = nodeB.startFlow(
+        val removeParticipantsFlow = nodeA.startFlow(
                 RemoveParticipantsFlow(
                         toRemove = listOf(nodeC.info.legalIdentities.single()),
                         chatId = chatInB.linearId
@@ -77,7 +77,7 @@ class RemoveParticipantsFlowTests {
         val chatInfosInVaultC = nodeC.services.vaultService.queryBy(ChatMetaInfo::class.java).states
         Assert.assertEquals(chatInfosInVaultA.size, 1)
         Assert.assertEquals(chatInfosInVaultB.size, 1)
-        Assert.assertEquals(chatInfosInVaultC.size, 1)
+        Assert.assertEquals(chatInfosInVaultC.size, 0)
 
         Assert.assertEquals(
                 (chatInfosInVaultA.map { it.state.data.linearId }

@@ -22,17 +22,23 @@ class RemoveParticipantsFlow(
     @Suspendable
     override fun call(): StateAndRef<ChatMetaInfo> {
 
+        // get and consume all messages in vault
+        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
+        val metaInfo = metaInfoStateAndRef.state.data
+        if (ourIdentity != metaInfo.admin) {
+            throw FlowException("Only chat admin can remove participants to chat.")
+        }
+
         // steps:
         // 1. close current ChatMetaInfo, need (all) sign
         subFlow(CloseMetaInfoFlow(chatId))
 
         // 2. create new ChatMetaInfo without removed parties, need (all - removed) sign
-        val metaStateRef = chatVaultService.getMetaInfo(chatId)
-        val metaInfo = metaStateRef.state.data
-
         val newReceivers = metaInfo.receivers - toRemove
-        return subFlow(CreateMetaInfoFlow(chatId, newReceivers))
+        val txn = subFlow(CreateMetaInfoFlow(chatId, newReceivers))
 
+        subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = RemoveParticipants()))
+        return txn
     }
 }
 
