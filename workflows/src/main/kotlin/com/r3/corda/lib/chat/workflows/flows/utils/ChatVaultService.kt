@@ -1,5 +1,6 @@
 package com.r3.corda.lib.chat.workflows.flows.utils
 
+import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatMessage
 import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatMetaInfo
 import com.r3.corda.lib.chat.contracts.states.ChatBaseState
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
@@ -55,7 +56,7 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
     private fun getMessages(chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<ChatMessage>> {
         val sorting = Sort(setOf(Sort.SortColumn(
                 // @todo: replace the magic string to a field
-                SortAttribute.Custom(PersistentChatMetaInfo::class.java, "created"),
+                SortAttribute.Custom(PersistentChatMessage::class.java, "created"),
                 Sort.Direction.DESC
         )))
 
