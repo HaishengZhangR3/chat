@@ -9,7 +9,7 @@ import net.corda.core.flows.*
 @StartableByService
 @StartableByRPC
 class ChatNotifyFlow(
-        private val info: ContractState,
+        private val info: List<ContractState>,
         private val command: ChatCommand
 ) : FlowLogic<Unit>() {
     @Suspendable

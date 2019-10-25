@@ -67,7 +67,8 @@ class CreateMessageFlowTests {
                 CreateMessageFlow(
                         subject = "subjectxxx",
                         content = "contentxxx",
-                        chatId = newChatInfo.linearId
+                        chatId = newChatInfo.linearId,
+                        receivers = listOf(nodeB.info.legalIdentities.single())
                 )
         )
 

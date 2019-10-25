@@ -68,7 +68,7 @@ private object CloseChatMessagesUtil {
         flow.serviceHub.recordTransactions(selfSignedTxn)
 
         // notify observers (including myself), if the app is listening
-        messages.forEach{ flow.subFlow(ChatNotifyFlow(info = it, command = CloseMessages())) }
+        flow.subFlow(ChatNotifyFlow(info = messages, command = CloseMessages()))
         return selfSignedTxn
     }
 

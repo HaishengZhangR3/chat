@@ -45,7 +45,7 @@ class AddReceiversFlow(
         val txn = subFlow(FinalityFlow(collectSignTxn, counterPartySession))
 
         // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = newMetaInfo, command = AddParticipants()))
+        subFlow(ChatNotifyFlow(info = listOf(newMetaInfo), command = AddParticipants()))
 
         return txn.coreTransaction.outRefsOfType<ChatMetaInfo>().single()
     }
@@ -64,7 +64,7 @@ class AddReceiversFlowResponder(private val otherSession: FlowSession): FlowLogi
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction) {
                 val metaInfo = stx.coreTransaction.outputStates.single() as ChatMetaInfo
-                return subFlow(ChatNotifyFlow(info = metaInfo, command = AddParticipants()))
+                return subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = AddParticipants()))
             }
         }
         val signTxn = subFlow(transactionSigner)

@@ -8,44 +8,41 @@ import java.time.Instant
 import java.util.*
 import javax.persistence.*
 
-object ChatMetaInfoSchema : MappedSchema(
-        PersistentChatMetaInfo::class.java,
+object ChatMessageSchema : MappedSchema(
+        PersistentChatMessage::class.java,
         version = 1,
-        mappedTypes = listOf(PersistentChatMetaInfo::class.java)
+        mappedTypes = listOf(PersistentChatMessage::class.java)
 )
 
 @Entity
 @Table(
-        name = "chat_meta_info",
+        name = "chat_messages",
         uniqueConstraints = [
-            UniqueConstraint(name = "id_constraint",
+            UniqueConstraint(name = "chat_messages_id_constraint",
                     columnNames = ["identifier", "created", "output_index", "transaction_id"])
         ],
         indexes = [
-            Index(name = "chatId_idx", columnList = "identifier", unique = false),
-            Index(name = "chatCreated_idx", columnList = "created", unique = false)
+            Index(name = "chat_messages_id_idx", columnList = "identifier", unique = false),
+            Index(name = "chat_messages_created_idx", columnList = "created", unique = false)
         ]
 )
-data class PersistentChatMetaInfo(
+data class PersistentChatMessage(
         // identifier is the linearId to indicate a chat thread
         @Column(name = "identifier", unique = false, nullable = false)
         val identifier: UUID,
         // created time
         @Column(name = "created", unique = false, nullable = false)
         val created: Instant,
-        @Column(name = "admin", unique = false, nullable = false)
-        val admin: Party,
-        @Column(name = "status", unique = false, nullable = false)
-        val status: String,
-
-        @ElementCollection
-        @Column(name = "chatReceiverList", unique = false, nullable = false)
-        @CollectionTable(name = "chat_receivers", joinColumns = [(JoinColumn(name = "output_index", referencedColumnName = "output_index")), (JoinColumn(name = "transaction_id", referencedColumnName = "transaction_id"))])
-        val chatReceiverList: List<Party>,
+        @Column(name = "subject", unique = false, nullable = false)
+        val subject: String,
+        @Column(name = "content", unique = false, nullable = false)
+        val content: String,
+        @Column(name = "sender", unique = false, nullable = false)
+        val sender: Party,
 
         @ElementCollection
         @Column(name = "participants", unique = false, nullable = false)
-        @CollectionTable(name = "chat_participants", joinColumns = [(JoinColumn(name = "output_index", referencedColumnName = "output_index")), (JoinColumn(name = "transaction_id", referencedColumnName = "transaction_id"))])
+        @CollectionTable(name = "chat_messages_participants", joinColumns = [(JoinColumn(name = "output_index", referencedColumnName = "output_index")), (JoinColumn(name = "transaction_id", referencedColumnName = "transaction_id"))])
         val participants: List<AbstractParty>
 
 ) : PersistentState()

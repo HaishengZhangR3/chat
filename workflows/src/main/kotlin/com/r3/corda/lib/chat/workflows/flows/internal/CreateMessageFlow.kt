@@ -8,6 +8,7 @@ import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
+import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 
@@ -17,15 +18,13 @@ import net.corda.core.utilities.unwrap
 // @todo: go through all of the flows, some of them should not be exposed to RPC public
 class CreateMessageFlow(
         private val chatId: UniqueIdentifier,
-        private val subject: String = "",
-        private val content: String = ""
+        private val receivers: List<Party>,
+        private val subject: String,
+        private val content: String
 ) : FlowLogic<StateAndRef<ChatMessage>>() {
 
     @Suspendable
     override fun call(): StateAndRef<ChatMessage> {
-
-        val metaStateRef = chatVaultService.getMetaInfo(chatId)
-        val metaInfo = metaStateRef.state.data
 
         val chatMessage = ChatMessage(
                 linearId = chatId,
@@ -35,8 +34,7 @@ class CreateMessageFlow(
                 participants = listOf(ourIdentity)
         )
 
-        val txnBuilder = TransactionBuilder(notary = metaStateRef.state.notary)
-                .addReferenceState(metaStateRef.referenced())
+        val txnBuilder = TransactionBuilder(notary = chatVaultService.notary())
                 .addOutputState(chatMessage)
                 .addCommand(CreateMessage(), ourIdentity.owningKey)
                 .also {
@@ -44,14 +42,14 @@ class CreateMessageFlow(
                 }
 
         // message will send to "to" list.
-        metaInfo.receivers.map { initiateFlow(it).send(chatMessage) }
+        receivers.map { initiateFlow(it).send(chatMessage) }
 
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
 
         // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = chatMessage, command = CreateMessage()))
+        subFlow(ChatNotifyFlow(info = listOf(chatMessage), command = CreateMessage()))
 
         return signedTxn.coreTransaction.outRefsOfType<ChatMessage>().single()
     }
@@ -67,7 +65,6 @@ class CreateMessageFlowResponder(private val flowSession: FlowSession) : FlowLog
         val metaStateRef = chatVaultService.getMetaInfo(chatMessage.linearId)
 
         val txnBuilder = TransactionBuilder(notary = metaStateRef.state.notary)
-                .addReferenceState(metaStateRef.referenced())
                 .addOutputState(chatMessage.copy(participants = listOf(ourIdentity)))
                 .addCommand(CreateMessage(), ourIdentity.owningKey)
                 .also {
@@ -78,8 +75,7 @@ class CreateMessageFlowResponder(private val flowSession: FlowSession) : FlowLog
         serviceHub.recordTransactions(signedTxn)
 
         // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = chatMessage, command = CreateMessage()))
-        println("Receiving a message: $chatMessage")
+        subFlow(ChatNotifyFlow(info = listOf(metaStateRef.state.data, chatMessage), command = CreateMessage()))
         return signedTxn.coreTransaction.outRefsOfType<ChatMessage>().single()
     }
 }

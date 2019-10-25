@@ -22,10 +22,8 @@ class CloseMetaInfoFlow(
     override fun call(): SignedTransaction {
 
         // get and consume all messages in vault
-        val metaInfoStateAndRef = chatVaultService.getActiveMetaInfo(chatId)
-        requireThat { "There must be message in vault" using (metaInfoStateAndRef != null) }
-
-        val metaInfo = metaInfoStateAndRef!!.state.data
+        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
+        val metaInfo = metaInfoStateAndRef.state.data
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)
                 .addCommand(CloseMeta(), metaInfo.participants.map { it.owningKey })
                 .addInputState(metaInfoStateAndRef)
@@ -40,7 +38,7 @@ class CloseMetaInfoFlow(
         val txn = subFlow(FinalityFlow(collectSignTxn, counterPartySession))
 
         // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = metaInfo, command = CloseMeta()))
+        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMeta()))
         return txn
     }
 }
@@ -58,7 +56,7 @@ class CloseMetaInfoFlowResponder(val otherSession: FlowSession) : FlowLogic<Sign
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction) {
                 val metaInfo = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as ChatMetaInfo
-                return subFlow(ChatNotifyFlow(info = metaInfo, command = CloseMeta()))
+                return subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMeta()))
             }
         }
         val signTxn = subFlow(transactionSigner)

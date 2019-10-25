@@ -1,7 +1,6 @@
 package net.corda.server.controllers
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
-import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
 import net.corda.core.identity.Party
 import net.corda.core.messaging.startFlow

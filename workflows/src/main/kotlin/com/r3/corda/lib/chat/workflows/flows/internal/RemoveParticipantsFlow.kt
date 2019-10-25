@@ -46,7 +46,7 @@ class RemoveParticipantsFlowResponder(val otherSession: FlowSession): FlowLogic<
                 val metaInfo = stx.coreTransaction.outputStates.single() as ChatMetaInfo
 
                 // notify observers (including myself), if the app is listening
-                subFlow(ChatNotifyFlow(info = metaInfo, command = RemoveParticipants()))
+                subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = RemoveParticipants()))
             }
         }
         val signTxn = subFlow(transactionSigner)

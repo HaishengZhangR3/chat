@@ -15,13 +15,6 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-
-// @todo:
-// . more detailed tests are needed.
-// . simultaneously trigger of reply or add/remove or close not tested,
-// . performance test not done,
-
-
 class CreateChatFlowTests {
 
     lateinit var network: MockNetwork
@@ -63,22 +56,35 @@ class CreateChatFlowTests {
         val txn = chatFlow.getOrThrow()
         val chatInfo = txn.state.data
 
-        val chatInfoInVaultA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single()
-        Assert.assertTrue(chatInfo == chatInfoInVaultA.state.data)
-
-        //check whether the created one in node B is same as that in the DB of host node A
-        val chatInfoInVaultB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single()
-        Assert.assertTrue(chatInfoInVaultA.state.data.linearId == chatInfoInVaultB.state.data.linearId)
+        val chatMessageA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single()
+        val chatMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single()
+        Assert.assertTrue(chatInfo == chatMessageA.state.data)
+        Assert.assertTrue(chatMessageB.state.data.linearId == chatMessageA.state.data.linearId)
+        Assert.assertTrue(chatMessageB.state.data.content == chatMessageA.state.data.content)
 
         // same chat in two nodes should have diff participants
-        val participantsA = chatInfoInVaultA.state.data.participants
-        val participantsB = chatInfoInVaultB.state.data.participants
-        Assert.assertEquals(participantsA.size,1)
-        Assert.assertEquals(participantsB.size,1)
+        val msgPartiesA = chatMessageA.state.data.participants
+        val msgPartiesB = chatMessageB.state.data.participants
+        Assert.assertEquals(msgPartiesA.size,1)
+        Assert.assertEquals(msgPartiesB.size,1)
 
-        val participantA = participantsA.single()
-        val participantB = participantsB.single()
-        Assert.assertFalse(participantA.nameOrNull().toString().equals(participantB.nameOrNull().toString()))
+        val msgPartyA = msgPartiesA.single()
+        val msgPartyB = msgPartiesB.single()
+        Assert.assertFalse(msgPartyA.nameOrNull().toString().equals(msgPartyB.nameOrNull().toString()))
+
+        //check whether the created one in node B is same as that in the DB of host node A
+        val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single()
+        val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single()
+        Assert.assertTrue(chatMetaB.state.data.linearId == chatMetaA.state.data.linearId)
+
+        // same chat in two nodes should have diff participants
+        val metaPartiesA = chatMetaA.state.data.participants
+        val metaPartiesB = chatMetaB.state.data.participants
+        Assert.assertEquals(metaPartiesA.size,2)
+        Assert.assertEquals(metaPartiesB.size,2)
+
+        Assert.assertTrue(metaPartiesA.subtract(metaPartiesB).isEmpty())
+        Assert.assertTrue(metaPartiesB.subtract(metaPartiesA).isEmpty())
 
     }
 }
