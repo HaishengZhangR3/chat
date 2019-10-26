@@ -52,7 +52,7 @@ class CloseMetaInfoFlow(
  * This is the flow which responds to close chat.
  */
 @InitiatedBy(CloseMetaInfoFlow::class)
-class CloseMetaInfoFlowResponder(val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
+class CloseMetaInfoFlowResponder(private val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
 

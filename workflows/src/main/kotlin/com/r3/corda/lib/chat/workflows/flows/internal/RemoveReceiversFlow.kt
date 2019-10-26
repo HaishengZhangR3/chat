@@ -14,7 +14,7 @@ import net.corda.core.transactions.SignedTransaction
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class RemoveParticipantsFlow(
+class RemoveReceiversFlow(
         private val chatId: UniqueIdentifier,
         private val toRemove: List<Party>
 ) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
@@ -42,8 +42,8 @@ class RemoveParticipantsFlow(
     }
 }
 
-@InitiatedBy(RemoveParticipantsFlow::class)
-class RemoveParticipantsFlowResponder(val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
+@InitiatedBy(RemoveReceiversFlow::class)
+class RemoveReceiversFlowResponder(private val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
         val transactionSigner = object : SignTransactionFlow(otherSession) {

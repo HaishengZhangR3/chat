@@ -101,8 +101,7 @@ class ChatController(rpc: NodeRPCConnection) {
                 """
                 ChatId: ${info.linearId},
                 Sender: ${info.sender.name.organisation},
-                Subject: ${info.subject},
-                Content: ${info.content}
+                Content: ${info.content}. 
             """.trimIndent()
             }.toString()
 }

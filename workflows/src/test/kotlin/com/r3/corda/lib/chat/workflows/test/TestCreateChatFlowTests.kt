@@ -2,7 +2,7 @@ package com.r3.corda.lib.chat.workflows.test
 
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
+import com.r3.corda.lib.chat.workflows.flows.TestCreateChatFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -15,7 +15,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class CreateChatFlowTests {
+class TestCreateChatFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
@@ -47,7 +47,7 @@ class CreateChatFlowTests {
     @Test
     fun `should be possible to create a chat`() {
 
-        val chatFlow = nodeA.startFlow(CreateChatFlow(
+        val chatFlow = nodeA.startFlow(TestCreateChatFlow(
                 subject = "subject",
                 content = "content",
                 receivers = listOf(nodeB.info.legalIdentities.single())
@@ -80,8 +80,8 @@ class CreateChatFlowTests {
         // same chat meta in two nodes should have same participants: admin itself
         val metaPartiesA = chatMetaA.state.data.participants
         val metaPartiesB = chatMetaB.state.data.participants
-        Assert.assertEquals(metaPartiesA.size,2)
-        Assert.assertEquals(metaPartiesB.size,2)
+        Assert.assertEquals(metaPartiesA.size,1)
+        Assert.assertEquals(metaPartiesB.size,1)
 
         Assert.assertTrue(metaPartiesA.subtract(metaPartiesB).isEmpty())
         Assert.assertTrue(metaPartiesB.subtract(metaPartiesA).isEmpty())

@@ -34,7 +34,7 @@ class CloseMessagesFlow(
 }
 
 @InitiatedBy(CloseMessagesFlow::class)
-class CloseMessagesFlowResponder(val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
+class CloseMessagesFlowResponder(private val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call(): SignedTransaction {
         val chatId = otherSession.receive<ChatID>().unwrap { it }

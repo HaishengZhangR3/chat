@@ -19,8 +19,8 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
         /**
          * You'd choose either do some extension logic, or discard the information received.
          * The received information send from Chat SDK is a [List] with two elements inside:
-         * First one, [ChatCommand] showing which command send you this message;
-         * Second one, specific subclass of [ContractState] implemented in Chat SDK;
+         * First one is a [ChatCommand] showing which command send you this message;
+         * Second one is a [List], where ChatMetaInfo and ChatMessage instances are saved;
          * [todo] You'd refer to Chat SDK document to know which command map to which state in the message.
          */
         val (command, info) = otherSession.receive<List<Any>>().unwrap { it }
@@ -33,22 +33,23 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
          *      Achieve messages,
          *      ....
          */
-        parseData(command = command as ChatCommand, info = info as ContractState))
+        parseData(command = command as ChatCommand, info = info as List<ContractState>))
     }
 
     private fun parseData(command: ChatCommand, info: ContractState): String =
             when (command) {
-                is Create               -> "New Message: " + chatInfoToString(info as ChatInfo)
-                is Reply                -> "Replied Message: " + chatInfoToString(info as ChatInfo)
-                is Close                -> { info as ChatInfo; "${info.linearId} is closed by ${info.sender}" }
-                else                    -> ""
+                is CreateMessage -> "New Message: " + chatInfoToString(info.single() as ChatMessage)
+                is Close         -> {
+                    val meta = info.single() as ChatMetaInfo;
+                    "${meta.linearId} is closed by ${meta.admin.name.organisation}"
+                // is xxxx
+                else             -> ""
             }
 
-    private fun chatInfoToString(info: ChatInfo) =
+    private fun chatInfoToString(info: ChatMessage) =
             """
                 ChatId: ${info.linearId},
                 Sender: ${info.sender.name.organisation},
-                Subject: ${info.subject},
                 Content: ${info.content}
             """.trimIndent()
 

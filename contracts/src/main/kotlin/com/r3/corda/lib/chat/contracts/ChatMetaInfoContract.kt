@@ -15,7 +15,7 @@ class ChatMetaInfoContract : Contract {
             is CreateMeta -> {
                 require(tx.inputStates.isEmpty()) { "There should be no input chat state." }
                 require(tx.outputStates.size == 1) { "There should only be one output chat state." }
-                require(command.signers.size > 1) { "There should only be one required signer for a chat: sender." }
+                require(command.signers.size >= 1) { "There should only be one required signer for a chat: sender." }
 
                 val output = tx.outputStates.single() as ChatMetaInfo
                 require(output.receivers.isNotEmpty()) { "The receiver list should not be empty, or include only yourself." }
@@ -31,17 +31,17 @@ class ChatMetaInfoContract : Contract {
 
             }
             is AddParticipants -> {
-                require(tx.inputStates.size == 1) { "There should be more than one input chat state." }
-                require(tx.outputStates.size == 1) { "There should be no output chat state." }
+//                require(tx.inputStates.size == 1) { "There should be more than one input chat state." }
+//                require(tx.outputStates.size == 1) { "There should be no output chat state." }
                 val requiredSigners = command.signers
-                require(requiredSigners.size > 1) { "There should be more than one required signer for a chat: from and to list." }
+                require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
             }
             is RemoveParticipants -> {
                 require(tx.inputStates.size == 1) { "There should be more than one input chat state." }
                 require(tx.outputStates.size == 1) { "There should be no output chat state." }
                 val requiredSigners = command.signers
-                require(requiredSigners.size > 1) { "There should be more than one required signer for a chat: from and to list." }
+                require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
             }
             else -> {

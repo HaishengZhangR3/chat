@@ -33,7 +33,6 @@ class ChatRPCWrapper() {
                 ::CreateChatFlow,
                 subject,
                 content,
-                attachment,
                 receivers
         ).returnValue.getOrThrow()
 
@@ -41,8 +40,7 @@ class ChatRPCWrapper() {
         val replyChat = proxy.startFlow(
                 ::ReplyChatFlow,
                 chatId,
-                content,
-                attachment
+                content
         ).returnValue.getOrThrow()
         return replyChat.coreTransaction.outputStates.single() as ChatInfo
     }

@@ -64,7 +64,6 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
             """
                 ChatId: ${message.linearId},
                 Sender: ${message.sender.name.organisation},
-                Subject: ${message.subject},
                 Content: ${message.content}
             """.trimIndent()
 }

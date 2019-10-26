@@ -2,7 +2,7 @@ package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.internal.RemoveReceiversFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.TestAddReceiversFlow
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.FlowLogic
@@ -11,19 +11,19 @@ import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.identity.Party
 
-
 @InitiatingFlow
 @StartableByService
 @StartableByRPC
-class RemoveParticipantsFlow(
+class TestAddParticipantsFlow(
         private val chatId: UniqueIdentifier,
-        private val toRemove: List<Party>
+        private val toAdd: List<Party>
+
 ) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
     @Suspendable
     override fun call(): StateAndRef<ChatMetaInfo> {
-        return subFlow(RemoveReceiversFlow(
+        return subFlow(TestAddReceiversFlow(
                 chatId = chatId,
-                toRemove = toRemove
+                toAdd = toAdd
         ))
     }
 }

@@ -25,6 +25,7 @@ class CreateMessageFlow(
 
     @Suspendable
     override fun call(): StateAndRef<ChatMessage> {
+        val metaStateRef = chatVaultService.getMetaInfo(chatId)
 
         val chatMessage = ChatMessage(
                 linearId = chatId,
@@ -35,6 +36,7 @@ class CreateMessageFlow(
         )
 
         val txnBuilder = TransactionBuilder(notary = chatVaultService.notary())
+                .addReferenceState(metaStateRef.referenced())
                 .addOutputState(chatMessage)
                 .addCommand(CreateMessage(), ourIdentity.owningKey)
                 .also {
@@ -56,12 +58,12 @@ class CreateMessageFlow(
 }
 
 @InitiatedBy(CreateMessageFlow::class)
-class CreateMessageFlowResponder(private val flowSession: FlowSession) : FlowLogic<StateAndRef<ChatMessage>>() {
+class CreateMessageFlowResponder(private val otherSession: FlowSession) : FlowLogic<StateAndRef<ChatMessage>>() {
     @Suspendable
     override fun call(): StateAndRef<ChatMessage> {
 
         // "receive" a message, then save to vault.
-        val chatMessage = flowSession.receive<ChatMessage>().unwrap { it }
+        val chatMessage = otherSession.receive<ChatMessage>().unwrap { it }
         val metaStateRef = chatVaultService.getMetaInfo(chatMessage.linearId)
 
         val newChatMessage = chatMessage.copy(participants = listOf(ourIdentity))
