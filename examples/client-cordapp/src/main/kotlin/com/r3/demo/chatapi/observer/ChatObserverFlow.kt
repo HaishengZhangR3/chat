@@ -12,8 +12,8 @@ import net.corda.core.flows.InitiatedBy
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.unwrap
 import java.io.File
-import java.time.Instant
 
+@Suppress("UNCHECKED_CAST")
 @InitiatedBy(ChatNotifyFlow::class)
 class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>() {
 
@@ -62,7 +62,7 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
 
     private fun chatInfoToString(message: ChatMessage) =
             """
-                ChatId: ${message.linearId},
+                ChatId: ${message.chatId},
                 Sender: ${message.sender.name.organisation},
                 Content: ${message.content}
             """.trimIndent()

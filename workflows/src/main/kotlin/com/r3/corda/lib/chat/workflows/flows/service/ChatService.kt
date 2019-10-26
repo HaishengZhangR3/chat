@@ -39,7 +39,7 @@ class AllChatIDs() : FlowLogic<List<UniqueIdentifier>>() {
 @StartableByRPC
 class AllChats : FlowLogic<List<StateAndRef<ChatMessage>>>() {
     @Suspendable
-    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getAllChats()
+    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getAllMessages()
 }
 
 // get all messages for one single chat by ID
@@ -48,7 +48,7 @@ class AllChats : FlowLogic<List<StateAndRef<ChatMessage>>>() {
 @StartableByRPC
 class ChatAllMessages(private val chatId: UniqueIdentifier) : FlowLogic<List<StateAndRef<ChatMessage>>>() {
     @Suspendable
-    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getVaultStates(chatId)
+    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getChatAllMessages(chatId)
 }
 
 // get chat status: active, close proposed, closed

@@ -66,7 +66,7 @@ class CloseChatFlowTests {
         val replyFlow = nodeB.startFlow(
                 ReplyChatFlow(
                         content = "reply content",
-                        chatId = newChatInfoB.linearId
+                        chatId = newChatInfoB.chatId
                 )
         )
 
@@ -76,7 +76,7 @@ class CloseChatFlowTests {
         // 3. close chat
         val closeFlow = nodeA.startFlow(
                 CloseChatFlow(
-                        chatId = newChatInfoB.linearId
+                        chatId = newChatInfoB.chatId
                 )
         )
         network.runNetwork()

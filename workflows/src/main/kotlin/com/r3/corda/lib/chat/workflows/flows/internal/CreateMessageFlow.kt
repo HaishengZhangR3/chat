@@ -27,7 +27,7 @@ class CreateMessageFlow(
         val metaStateRef = chatVaultService.getMetaInfo(chatId)
 
         val chatMessage = ChatMessage(
-                linearId = chatId,
+                chatId = chatId,
                 content = content,
                 sender = ourIdentity,
                 participants = listOf(ourIdentity)
@@ -62,7 +62,7 @@ class CreateMessageFlowResponder(private val otherSession: FlowSession) : FlowLo
 
         // "receive" a message, then save to vault.
         val chatMessage = otherSession.receive<ChatMessage>().unwrap { it }
-        val metaStateRef = chatVaultService.getMetaInfo(chatMessage.linearId)
+        val metaStateRef = chatVaultService.getMetaInfo(chatMessage.chatId)
 
         val newChatMessage = chatMessage.copy(participants = listOf(ourIdentity))
         val txnBuilder = TransactionBuilder(notary = metaStateRef.state.notary)

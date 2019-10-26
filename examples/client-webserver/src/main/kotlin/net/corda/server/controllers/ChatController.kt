@@ -98,7 +98,7 @@ class ChatController(rpc: NodeRPCConnection) {
     private fun chatInfoToString(infos: List<ChatMessage>) =
             infos.map { info ->
                 """
-                ChatId: ${info.linearId},
+                ChatId: ${info.chatId},
                 Sender: ${info.sender.name.organisation},
                 Content: ${info.content}. 
             """.trimIndent()

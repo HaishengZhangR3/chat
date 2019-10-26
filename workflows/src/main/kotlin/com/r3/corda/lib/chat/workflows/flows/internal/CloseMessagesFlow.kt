@@ -49,7 +49,7 @@ private object CloseChatMessagesUtil {
         val metaInfoStateAndRef = flow.chatVaultService.getMetaInfo(chatId)
         val metaInfo = metaInfoStateAndRef.state.data
 
-        val messagesStateRef = flow.chatVaultService.getActiveMessages(chatId)
+        val messagesStateRef = flow.chatVaultService.getChatActiveMessages(chatId)
         requireThat { "There must be message in vault" using (messagesStateRef.isNotEmpty()) }
 
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)

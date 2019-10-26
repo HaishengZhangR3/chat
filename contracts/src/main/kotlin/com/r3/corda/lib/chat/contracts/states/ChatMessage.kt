@@ -13,10 +13,10 @@ import java.time.Instant
 
 @BelongsToContract(ChatMessageContract::class)
 data class ChatMessage(
-        override val linearId: ChatID,
-        override val created: Instant = Instant.now(),
+        val chatId: ChatID,
         override val participants: List<AbstractParty>,
-        val content: String = "",
+        val created: Instant = Instant.now(),
+        val content: String,
         val sender: Party
 ) : ChatBaseState, QueryableState {
 
@@ -24,7 +24,7 @@ data class ChatMessage(
             when (schema) {
                 is ChatMessageSchema ->
                     PersistentChatMessage(
-                            identifier = linearId.id,
+                            identifier = chatId.id,
                             created = created,
                             content = content,
                             sender = sender,
@@ -36,7 +36,7 @@ data class ChatMessage(
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatMessageSchema)
     override fun toString(): String {
-        return "ChatMessage(linearId=$linearId, created=$created, participants=$participants, content='$content', sender=$sender)"
+        return "ChatMessage(chatId=$chatId, created=$created, participants=$participants, content='$content', sender=$sender)"
     }
 
 }

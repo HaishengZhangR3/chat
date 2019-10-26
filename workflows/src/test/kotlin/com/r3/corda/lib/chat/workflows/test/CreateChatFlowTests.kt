@@ -59,7 +59,7 @@ class CreateChatFlowTests {
         val chatMessageA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single()
         val chatMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single()
         Assert.assertTrue(chatInfo == chatMessageA.state.data)
-        Assert.assertTrue(chatMessageB.state.data.linearId == chatMessageA.state.data.linearId)
+        Assert.assertTrue(chatMessageB.state.data.chatId == chatMessageA.state.data.chatId)
         Assert.assertTrue(chatMessageB.state.data.content == chatMessageA.state.data.content)
 
         // same chat in two nodes should have diff participants

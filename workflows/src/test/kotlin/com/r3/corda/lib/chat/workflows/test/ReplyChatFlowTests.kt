@@ -74,7 +74,7 @@ class ReplyChatFlowTests {
         val replyChatMessage = chatMessageStateRef.state.data
 
         // the reply chat id === thread id
-        Assert.assertTrue(replyChatMessage.linearId == newChatMetaInfoB.linearId)
+        Assert.assertTrue(replyChatMessage.chatId == newChatMetaInfoB.linearId)
 
         // there are one chat meta on ledge in each node
         val replyChatMetaStateRefA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states
@@ -105,14 +105,14 @@ class ReplyChatFlowTests {
         Assert.assertTrue(newChatMsgDate < replyChatMsgDate)
 
         // all of them have same id
-        Assert.assertEquals(listOf(newChatInfo.linearId,
+        Assert.assertEquals(listOf(newChatInfo.chatId,
                 newChatMetaInfoA.linearId,
                 newChatMetaInfoB.linearId,
-                replyChatMessage.linearId,
+                replyChatMessage.chatId,
                 replyChatMetaA.linearId,
                 replyChatMetaB.linearId,
-                chatMessageA.linearId,
-                chatMessageB.linearId
+                chatMessageA.chatId,
+                chatMessageB.chatId
                 ).toSet().size,
                 1)
 

@@ -157,16 +157,16 @@ class IntegrationTest {
 
             log.warn("***** Creating chat on node A *****")
             val chatOnA = createChat(who = A, toList = listOf(B.legalIdentity()), any = "from A")
-            log.warn("***** The chat created on A is: ${chatOnA.linearId} *****")
+            log.warn("***** The chat created on A is: ${chatOnA.chatId} *****")
 
             log.warn("***** Reply chat from B *****")
-            val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
-            log.warn("***** The chat replied from B: ${chatOnB.linearId} *****")
+            val chatOnB = replyChat(who = B, chatId = chatOnA.chatId, any = "from B")
+            log.warn("***** The chat replied from B: ${chatOnB.chatId} *****")
 
             log.warn("*****  close from B *****")
-            closeChat(proposer = B, chatId = chatOnA.linearId)
+            closeChat(proposer = B, chatId = chatOnA.chatId)
 
-            log.warn("***** Chat ${chatOnA.linearId} closed *****")
+            log.warn("***** Chat ${chatOnA.chatId} closed *****")
 
             log.warn("**** Now let's check the closed chat *****")
             val chatsInA = A.rpc.vaultQuery(ChatMetaInfo::class.java).states
@@ -189,14 +189,14 @@ class IntegrationTest {
 
             log.warn("***** Creating chat on node A *****")
             val chatOnA = createChat(who = A, toList = listOf(B.legalIdentity()), any = "from A")
-            log.warn("***** The chat created on A is: ${chatOnA.linearId} *****")
+            log.warn("***** The chat created on A is: ${chatOnA.chatId} *****")
 
             log.warn("***** Reply chat from B *****")
-            val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
-            log.warn("***** The chat replied from B: ${chatOnB.linearId} *****")
+            val chatOnB = replyChat(who = B, chatId = chatOnA.chatId, any = "from B")
+            log.warn("***** The chat replied from B: ${chatOnB.chatId} *****")
 
             log.warn("***** add participants from B *****")
-            addParticipantsToChat(proposer = B, toAdd = listOf(C.legalIdentity()), chatId = chatOnA.linearId)
+            addParticipantsToChat(proposer = B, toAdd = listOf(C.legalIdentity()), chatId = chatOnA.chatId)
 
             log.warn("**** Now let's check the chat *****")
             val chatsInA = A.rpc.vaultQuery(ChatMetaInfo::class.java).states
@@ -213,7 +213,7 @@ class IntegrationTest {
 
             val allChatIds = (chatsInA + chatsInB + chatsInC).map { it.state.data.linearId }.distinct()
             Assert.assertTrue(allChatIds.size == 1)
-            Assert.assertTrue(allChatIds.single() == chatOnA.linearId)
+            Assert.assertTrue(allChatIds.single() == chatOnA.chatId)
 
             log.warn("**** All passed, happy *****")
         }
@@ -262,21 +262,21 @@ class IntegrationTest {
                     log.warn("***** Creating chat on node ${node.nodeInfo.legalIdentities.first().name} *****")
                     val chatOnNode = createChat(who = node, toList = toList, any = "from $fromNodeName")
                     (toList + node.nodeInfo.legalIdentities).distinct().map { party ->
-                        howManyUniqueIdentifier[party]?.add(chatOnNode.linearId)
+                        howManyUniqueIdentifier[party]?.add(chatOnNode.chatId)
                     }
 
-                    log.warn("***** The chat created is: ${chatOnNode.linearId} *****")
+                    log.warn("***** The chat created is: ${chatOnNode.chatId} *****")
 
                     toNodes.map {
                         val toNodeName = it.nodeInfo.legalIdentities.first().name
                         log.warn("***** Reply chat from ${toNodeName} *****")
-                        val chatOnReply = replyChat(who = it, chatId = chatOnNode.linearId, any = "from ${toNodeName}")
+                        val chatOnReply = replyChat(who = it, chatId = chatOnNode.chatId, any = "from ${toNodeName}")
 
                         (toList + node.nodeInfo.legalIdentities).distinct().map { party ->
-                            howManyUniqueIdentifier[party]?.add(chatOnReply.linearId)
+                            howManyUniqueIdentifier[party]?.add(chatOnReply.chatId)
                         }
 
-                        log.warn("***** The chat replied: ${chatOnReply.linearId} *****")
+                        log.warn("***** The chat replied: ${chatOnReply.chatId} *****")
                     }
                 }
             }
@@ -299,7 +299,7 @@ class IntegrationTest {
             Assert.assertEquals(howManyChatsMessagesA, allChatsFromVault.size)
 
             val idsAllChatsFromVault = allChatsFromVault.map {
-                it.state.data.linearId
+                it.state.data.chatId
             }.toList().distinct()
 
             Assert.assertEquals(idsAllChatsFromVault.size, howManyUniqueIdentifierA.size)
@@ -344,15 +344,15 @@ class IntegrationTest {
 
             log.warn("***** Creating chat on node A *****")
             val chatOnA = createChat(who = A, toList = listOf(B.legalIdentity()), any = "from A")
-            log.warn("***** The chat created on A is: ${chatOnA.linearId} *****")
+            log.warn("***** The chat created on A is: ${chatOnA.chatId} *****")
 
             log.warn("***** Reply chat from B *****")
-            val chatOnB = replyChat(who = B, chatId = chatOnA.linearId, any = "from B")
-            log.warn("***** The chat ${chatOnB.linearId} is replied from B *****")
+            val chatOnB = replyChat(who = B, chatId = chatOnA.chatId, any = "from B")
+            log.warn("***** The chat ${chatOnB.chatId} is replied from B *****")
 
             log.warn("***** add participants from B *****")
-            addParticipantsToChat(proposer = B, toAdd = listOf(C.legalIdentity()), chatId = chatOnA.linearId)
-            log.warn("***** Participant ${C.legalIdentity()} is add to chat ${chatOnB.linearId} *****")
+            addParticipantsToChat(proposer = B, toAdd = listOf(C.legalIdentity()), chatId = chatOnA.chatId)
+            log.warn("***** Participant ${C.legalIdentity()} is add to chat ${chatOnB.chatId} *****")
 
             log.warn("***** All chatIDs *****")
             val allChatIDsFromVault = getAllChatIDs(A)
@@ -362,21 +362,21 @@ class IntegrationTest {
             val allChatsFromVault = getAllChats(A)
             log.warn("***** All chats: $allChatsFromVault *****")
 
-            log.warn("***** All messages for one single chat by ID: ${chatOnA.linearId} *****")
-            val chatAllMessagesFromVault = getChatAllMessages(A, chatOnA.linearId)
-            log.warn("***** All messages for ${chatOnA.linearId} are: $chatAllMessagesFromVault *****")
+            log.warn("***** All messages for one single chat by ID: ${chatOnA.chatId} *****")
+            val chatAllMessagesFromVault = getChatAllMessages(A, chatOnA.chatId)
+            log.warn("***** All messages for ${chatOnA.chatId} are: $chatAllMessagesFromVault *****")
 
             log.warn("***** Chat status: active, close proposed, closed for one chat by ID *****")
-            val chatStatusFromVault = getChatCurrentStatus(B, chatOnA.linearId)
-            log.warn("***** Chat status for ${chatOnA.linearId} is: $chatStatusFromVault *****")
+            val chatStatusFromVault = getChatCurrentStatus(B, chatOnA.chatId)
+            log.warn("***** Chat status for ${chatOnA.chatId} is: $chatStatusFromVault *****")
 
             log.warn("***** All participants for one chat by ID *****")
-            val chatParticipantsFromVault = getChatParticipants(C, chatOnA.linearId)
-            log.warn("***** The participants for ${chatOnA.linearId} are: $chatParticipantsFromVault *****")
+            val chatParticipantsFromVault = getChatParticipants(C, chatOnA.chatId)
+            log.warn("***** The participants for ${chatOnA.chatId} are: $chatParticipantsFromVault *****")
 
             log.warn("***** close from B *****")
-            closeChat(proposer = B, chatId = chatOnA.linearId)
-            log.warn("***** Chat ${chatOnA.linearId} is closed *****")
+            closeChat(proposer = B, chatId = chatOnA.chatId)
+            log.warn("***** Chat ${chatOnA.chatId} is closed *****")
 
             log.warn("**** All passed, happy *****")
         }

@@ -4,6 +4,7 @@ import com.r3.corda.lib.chat.contracts.ChatMetaInfoContract
 import com.r3.corda.lib.chat.contracts.internal.schemas.ChatMetaInfoSchema
 import com.r3.corda.lib.chat.contracts.internal.schemas.PersistentChatMetaInfo
 import net.corda.core.contracts.BelongsToContract
+import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
@@ -24,13 +25,13 @@ sealed class ChatStatus {
 @BelongsToContract(ChatMetaInfoContract::class)
 data class ChatMetaInfo(
         override val linearId: ChatID,
-        override val created: Instant = Instant.now(),
+        val created: Instant = Instant.now(),
         override val participants: List<AbstractParty>,
         val admin: Party,
         val receivers: List<Party>,
         val subject: String,
         val status: ChatStatus = ChatStatus.ACTIVE
-) : ChatBaseState, QueryableState {
+) : ChatBaseState, QueryableState, LinearState {
 
     override fun generateMappedObject(schema: MappedSchema): PersistentState =
             when (schema) {
@@ -52,5 +53,4 @@ data class ChatMetaInfo(
     override fun toString(): String {
         return "ChatMetaInfo(linearId=$linearId, created=$created, participants=$participants, admin=$admin, receivers=$receivers, subject='$subject', status=$status)"
     }
-
 }
