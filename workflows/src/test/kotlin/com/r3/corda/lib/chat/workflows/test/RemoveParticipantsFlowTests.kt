@@ -2,7 +2,7 @@ package com.r3.corda.lib.chat.workflows.test
 
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.CreateChatFlow
-import com.r3.corda.lib.chat.workflows.flows.internal.RemoveParticipantsFlow
+import com.r3.corda.lib.chat.workflows.flows.internal.RemoveReceiversFlow
 import com.r3.corda.lib.chat.workflows.test.observer.ObserverUtils
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -62,7 +62,7 @@ class RemoveParticipantsFlowTests {
 
         // 2. remove participants
         val removeParticipantsFlow = nodeA.startFlow(
-                RemoveParticipantsFlow(
+                RemoveReceiversFlow(
                         toRemove = listOf(nodeC.info.legalIdentities.single()),
                         chatId = chatInB.linearId
                 )

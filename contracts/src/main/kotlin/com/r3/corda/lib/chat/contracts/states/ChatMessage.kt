@@ -16,7 +16,6 @@ data class ChatMessage(
         override val linearId: ChatID,
         override val created: Instant = Instant.now(),
         override val participants: List<AbstractParty>,
-        val subject: String = "",
         val content: String = "",
         val sender: Party
 ) : ChatBaseState, QueryableState {
@@ -27,7 +26,6 @@ data class ChatMessage(
                     PersistentChatMessage(
                             identifier = linearId.id,
                             created = created,
-                            subject = subject,
                             content = content,
                             sender = sender,
                             participants = participants
@@ -38,7 +36,7 @@ data class ChatMessage(
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatMessageSchema)
     override fun toString(): String {
-        return "ChatMessage(linearId=$linearId, created=$created, participants=$participants, subject='$subject', content='$content', sender=$sender)"
+        return "ChatMessage(linearId=$linearId, created=$created, participants=$participants, content='$content', sender=$sender)"
     }
 
 }

@@ -17,7 +17,6 @@ import net.corda.core.transactions.SignedTransaction
 @StartableByRPC
 class ReplyChatFlow(
         private val chatId: UniqueIdentifier,
-        private val subject: String,
         private val content: String
 ) : FlowLogic<StateAndRef<ChatMessage>>() {
     @Suspendable
@@ -28,7 +27,6 @@ class ReplyChatFlow(
         return subFlow(CreateMessageFlow(
                 chatId = metaInfo.linearId,
                 receivers = metaInfo.receivers + metaInfo.admin - ourIdentity,
-                subject = subject,
                 content = content
         ))
     }

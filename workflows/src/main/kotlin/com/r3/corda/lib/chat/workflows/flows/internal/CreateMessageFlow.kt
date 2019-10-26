@@ -19,7 +19,6 @@ import net.corda.core.utilities.unwrap
 class CreateMessageFlow(
         private val chatId: UniqueIdentifier,
         private val receivers: List<Party>,
-        private val subject: String,
         private val content: String
 ) : FlowLogic<StateAndRef<ChatMessage>>() {
 
@@ -29,7 +28,6 @@ class CreateMessageFlow(
 
         val chatMessage = ChatMessage(
                 linearId = chatId,
-                subject = subject,
                 content = content,
                 sender = ourIdentity,
                 participants = listOf(ourIdentity)

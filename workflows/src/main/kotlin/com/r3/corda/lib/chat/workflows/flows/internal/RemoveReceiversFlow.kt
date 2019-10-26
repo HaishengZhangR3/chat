@@ -35,7 +35,7 @@ class RemoveReceiversFlow(
 
         // 2. create new ChatMetaInfo without removed parties, need (all - removed) sign
         val newReceivers = metaInfo.receivers - toRemove
-        val txn = subFlow(CreateMetaInfoFlow(chatId, newReceivers))
+        val txn = subFlow(CreateMetaInfoFlow(chatId, metaInfo.subject, newReceivers))
 
         subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = RemoveParticipants()))
         return txn

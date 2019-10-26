@@ -3,7 +3,6 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.CloseMessages
 import com.r3.corda.lib.chat.contracts.states.ChatID
-import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
@@ -50,7 +49,7 @@ private object CloseChatMessagesUtil {
         val metaInfoStateAndRef = flow.chatVaultService.getMetaInfo(chatId)
         val metaInfo = metaInfoStateAndRef.state.data
 
-        val messagesStateRef = flow.chatVaultService.getVaultStates<ChatMessage>(chatId)
+        val messagesStateRef = flow.chatVaultService.getActiveMessages(chatId)
         requireThat { "There must be message in vault" using (messagesStateRef.isNotEmpty()) }
 
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)

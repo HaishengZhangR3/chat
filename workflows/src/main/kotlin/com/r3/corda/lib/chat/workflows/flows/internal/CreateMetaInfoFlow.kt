@@ -19,6 +19,7 @@ import java.util.*
 @StartableByRPC
 class CreateMetaInfoFlow(
         private val chatId: UniqueIdentifier = UniqueIdentifier.fromString(UUID.randomUUID().toString()),
+        private val subject: String,
         private val receivers: List<Party>
 ) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
 
@@ -30,6 +31,7 @@ class CreateMetaInfoFlow(
                 participants = receivers + ourIdentity,
                 admin = ourIdentity,
                 receivers = receivers,
+                subject = subject,
                 status = ChatStatus.ACTIVE
         )
 

@@ -65,7 +65,6 @@ class CloseChatFlowTests {
         // 2 reply the chat
         val replyFlow = nodeB.startFlow(
                 ReplyChatFlow(
-                        subject = "reply subject",
                         content = "reply content",
                         chatId = newChatInfoB.linearId
                 )

@@ -21,6 +21,7 @@ import java.util.*
 @StartableByRPC
 class TestCreateMetaInfoFlow(
         private val chatId: UniqueIdentifier = UniqueIdentifier.fromString(UUID.randomUUID().toString()),
+        private val subject: String,
         private val receivers: List<Party>
 ) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
 
@@ -32,6 +33,7 @@ class TestCreateMetaInfoFlow(
                 participants = listOf(ourIdentity),
                 admin = ourIdentity,
                 receivers = receivers,
+                subject = subject,
                 status = ChatStatus.ACTIVE
         )
         val txnBuilder = TransactionBuilder(notary = notary)

@@ -33,8 +33,6 @@ data class PersistentChatMessage(
         // created time
         @Column(name = "created", unique = false, nullable = false)
         val created: Instant,
-        @Column(name = "subject", unique = false, nullable = false)
-        val subject: String,
         @Column(name = "content", unique = false, nullable = false)
         val content: String,
         @Column(name = "sender", unique = false, nullable = false)

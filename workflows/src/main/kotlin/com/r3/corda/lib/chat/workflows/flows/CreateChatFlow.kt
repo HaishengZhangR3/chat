@@ -22,11 +22,10 @@ class CreateChatFlow(
 
     @Suspendable
     override fun call(): StateAndRef<ChatMessage> {
-        val metaStateRef = subFlow(CreateMetaInfoFlow(receivers = receivers))
+        val metaStateRef = subFlow(CreateMetaInfoFlow(receivers = receivers, subject = subject))
         return subFlow(CreateMessageFlow(
                 chatId = metaStateRef.state.data.linearId,
                 receivers = metaStateRef.state.data.receivers,
-                subject = subject,
                 content = content
         ))
     }

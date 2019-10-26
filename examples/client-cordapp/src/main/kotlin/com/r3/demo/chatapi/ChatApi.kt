@@ -45,12 +45,11 @@ class ChatApi() {
         return createChat.state.data
     }
 
-    fun replyChat(chatId: UniqueIdentifier, subject: String, content: String): ChatMessage {
+    fun replyChat(chatId: UniqueIdentifier, content: String): ChatMessage {
         log.warn("***** replyChat *****")
         val replyChat = proxy.startFlow(
                 ::ReplyChatFlow,
                 chatId,
-                subject,
                 content
         ).returnValue.getOrThrow()
         return replyChat.state.data

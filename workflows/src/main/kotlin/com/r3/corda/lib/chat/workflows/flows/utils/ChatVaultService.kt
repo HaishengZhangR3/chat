@@ -54,15 +54,8 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
     /* get message level information from vault */
     // get the chats thread from storage based on the chatId
     private fun getMessages(chatId: UniqueIdentifier, status: StateStatus = StateStatus.UNCONSUMED): List<StateAndRef<ChatMessage>> {
-        val sorting = Sort(setOf(Sort.SortColumn(
-                // @todo: replace the magic string to a field
-                SortAttribute.Custom(PersistentChatMessage::class.java, "created"),
-                Sort.Direction.DESC
-        )))
-
         val stateAndRefs = serviceHub.vaultService.queryBy<ChatMessage>(
-                criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(chatId), status = status),
-                sorting = sorting)
+                criteria = QueryCriteria.LinearStateQueryCriteria(linearId = listOf(chatId), status = status))
         return stateAndRefs.states
     }
 
@@ -96,7 +89,6 @@ class ChatVaultService(val serviceHub: AppServiceHub) : SingletonSerializeAsToke
     fun getActiveMetaInfo(chatId: UniqueIdentifier): StateAndRef<ChatMetaInfo>? =
             getActiveStates<ChatMetaInfo>(chatId).firstOrNull()
 
-    /* get chat information helper */
     // get current chat status
     fun getChatStatus(chatId: UniqueIdentifier): ChatStatus {
         val metaInfo = getActiveMetaInfo(chatId)

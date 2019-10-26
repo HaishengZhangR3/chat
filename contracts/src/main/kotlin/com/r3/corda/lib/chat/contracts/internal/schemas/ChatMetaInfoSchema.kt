@@ -35,6 +35,8 @@ data class PersistentChatMetaInfo(
         val created: Instant,
         @Column(name = "admin", unique = false, nullable = false)
         val admin: Party,
+        @Column(name = "subject", unique = false, nullable = false)
+        val subject: String,
         @Column(name = "status", unique = false, nullable = false)
         val status: String,
 

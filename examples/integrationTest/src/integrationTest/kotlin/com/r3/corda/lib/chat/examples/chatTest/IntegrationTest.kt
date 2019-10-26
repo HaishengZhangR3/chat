@@ -77,7 +77,6 @@ class IntegrationTest {
         val replyChat = who.rpc.startFlow(
                 ::ReplyChatFlow,
                 chatId,
-                "some subject replied $any",
                 "Some sample content replied $any"
         ).returnValue.getOrThrow()
 
@@ -153,7 +152,7 @@ class IntegrationTest {
     fun `Corda Chat supports create, reply, close`() {
         driver(driverParameters) {
             log.warn("***** Chat integration test starting ....... *****")
-            val (A, B, C) = nodeParams.map { params -> startNode(params) }.transpose().getOrThrow()
+            val (A, B, _) = nodeParams.map { params -> startNode(params) }.transpose().getOrThrow()
             log.warn("***** All nodes started up *****")
 
             log.warn("***** Creating chat on node A *****")

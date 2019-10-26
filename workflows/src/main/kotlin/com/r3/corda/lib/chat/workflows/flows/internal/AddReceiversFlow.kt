@@ -35,7 +35,7 @@ class AddReceiversFlow(
 
         // 2. create new ChatMetaInfo without removed parties, need (all - removed) sign
         val newReceivers = metaInfo.receivers + toAdd
-        val txn = subFlow(CreateMetaInfoFlow(chatId, newReceivers))
+        val txn = subFlow(CreateMetaInfoFlow(chatId, metaInfo.subject, newReceivers))
 
         subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = AddParticipants()))
 

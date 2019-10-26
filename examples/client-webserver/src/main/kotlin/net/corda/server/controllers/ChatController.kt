@@ -43,7 +43,6 @@ class ChatController(rpc: NodeRPCConnection) {
                   @RequestBody chatMessage: APIChatMessage) =
             ChatService.api(proxy).replyChat(
                     chatId = toID(id),
-                    subject = chatMessage.subject,
                     content = chatMessage.content
             ).toString()
 

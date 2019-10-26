@@ -28,6 +28,7 @@ data class ChatMetaInfo(
         override val participants: List<AbstractParty>,
         val admin: Party,
         val receivers: List<Party>,
+        val subject: String,
         val status: ChatStatus = ChatStatus.ACTIVE
 ) : ChatBaseState, QueryableState {
 
@@ -40,6 +41,7 @@ data class ChatMetaInfo(
                             admin = admin,
                             chatReceiverList = receivers,
                             status = status.toString(),
+                            subject = subject,
                             participants = participants
                     )
                 else ->
@@ -48,7 +50,7 @@ data class ChatMetaInfo(
 
     override fun supportedSchemas(): Iterable<MappedSchema> = listOf(ChatMetaInfoSchema)
     override fun toString(): String {
-        return "ChatMetaInfo(linearId=$linearId, created=$created, participants=$participants, admin=$admin, receivers=$receivers, status=$status)"
+        return "ChatMetaInfo(linearId=$linearId, created=$created, participants=$participants, admin=$admin, receivers=$receivers, subject='$subject', status=$status)"
     }
 
 }
