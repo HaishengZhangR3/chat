@@ -54,10 +54,8 @@ class CreateMetaInfoFlow(
 
 @InitiatedBy(CreateMetaInfoFlow::class)
 class CreateMetaInfoFlowResponder(private val otherSession: FlowSession): FlowLogic<SignedTransaction>() {
-
     @Suspendable
     override fun call(): SignedTransaction {
-
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction) {

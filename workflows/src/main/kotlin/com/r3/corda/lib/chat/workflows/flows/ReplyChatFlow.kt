@@ -25,7 +25,6 @@ class ReplyChatFlow(
         val metaInfo = metaInfoStateAndRef.state.data
         return subFlow(CreateMessageFlow(
                 chatId = metaInfo.linearId,
-                receivers = metaInfo.receivers + metaInfo.admin - ourIdentity,
                 content = content
         ))
     }

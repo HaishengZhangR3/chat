@@ -18,7 +18,6 @@ import net.corda.core.utilities.unwrap
 // @todo: go through all of the flows, some of them should not be exposed to RPC public
 class CreateMessageFlow(
         private val chatId: UniqueIdentifier,
-        private val receivers: List<Party>,
         private val content: String
 ) : FlowLogic<StateAndRef<ChatMessage>>() {
 
@@ -42,7 +41,8 @@ class CreateMessageFlow(
                 }
 
         // message will send to "to" list.
-        receivers.map { initiateFlow(it).send(chatMessage) }
+        val allReceivers = with (metaStateRef.state.data) { receivers + admin - ourIdentity }
+        allReceivers.map { initiateFlow(it).send(chatMessage) }
 
         // save to vault
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
@@ -66,6 +66,7 @@ class CreateMessageFlowResponder(private val otherSession: FlowSession) : FlowLo
 
         val newChatMessage = chatMessage.copy(participants = listOf(ourIdentity))
         val txnBuilder = TransactionBuilder(notary = metaStateRef.state.notary)
+                .addReferenceState(metaStateRef.referenced())
                 .addOutputState(newChatMessage)
                 .addCommand(CreateMessage(), ourIdentity.owningKey)
                 .also {

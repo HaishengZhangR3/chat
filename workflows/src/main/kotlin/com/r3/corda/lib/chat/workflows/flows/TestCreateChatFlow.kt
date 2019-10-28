@@ -26,7 +26,6 @@ class TestCreateChatFlow(
 
         return subFlow(CreateMessageFlow(
                 chatId = metaStateRef.state.data.linearId,
-                receivers = metaStateRef.state.data.receivers,
                 content = content
         ))
     }

@@ -25,7 +25,6 @@ class CreateChatFlow(
         val metaStateRef = subFlow(CreateMetaInfoFlow(receivers = receivers, subject = subject))
         return subFlow(CreateMessageFlow(
                 chatId = metaStateRef.state.data.linearId,
-                receivers = metaStateRef.state.data.receivers,
                 content = content
         ))
     }
