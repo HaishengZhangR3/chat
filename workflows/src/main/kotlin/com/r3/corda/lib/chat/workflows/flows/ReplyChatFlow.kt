@@ -20,11 +20,8 @@ class ReplyChatFlow(
 ) : FlowLogic<StateAndRef<ChatMessage>>() {
     @Suspendable
     override fun call(): StateAndRef<ChatMessage> {
-        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
-
-        val metaInfo = metaInfoStateAndRef.state.data
         return subFlow(CreateMessageFlow(
-                chatId = metaInfo.linearId,
+                chatId = chatId,
                 content = content
         ))
     }

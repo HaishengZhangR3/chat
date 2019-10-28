@@ -24,9 +24,6 @@ class CloseMetaInfoFlow(
         // get and consume all messages in vault
         val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
         val metaInfo = metaInfoStateAndRef.state.data
-        if (ourIdentity != metaInfo.admin) {
-            throw FlowException("Only chat admin can close the chat.")
-        }
 
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)
                 .addCommand(CloseMeta(), metaInfo.participants.map { it.owningKey })
@@ -47,10 +44,6 @@ class CloseMetaInfoFlow(
     }
 }
 
-
-/**
- * This is the flow which responds to close chat.
- */
 @InitiatedBy(CloseMetaInfoFlow::class)
 class CloseMetaInfoFlowResponder(private val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable

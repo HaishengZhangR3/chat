@@ -19,26 +19,7 @@ class CloseMessagesFlow(
         private val chatId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable
-    override fun call(): SignedTransaction {
-        // get and consume all messages in vault
-        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
-        if (ourIdentity != metaInfoStateAndRef.state.data.admin) {
-            throw FlowException("Only chat admin can close the chat.")
-        }
-
-        val txn = CloseChatMessagesUtil.close(this, chatId)
-        CloseChatMessagesUtil.closeCounterParties(this, chatId)
-        return txn
-    }
-}
-
-@InitiatedBy(CloseMessagesFlow::class)
-class CloseMessagesFlowResponder(private val otherSession: FlowSession) : FlowLogic<SignedTransaction>() {
-    @Suspendable
-    override fun call(): SignedTransaction {
-        val chatId = otherSession.receive<ChatID>().unwrap { it }
-        return CloseChatMessagesUtil.close(this, chatId)
-    }
+    override fun call(): SignedTransaction = CloseChatMessagesUtil.close(this, chatId)
 }
 
 private object CloseChatMessagesUtil {
@@ -65,12 +46,5 @@ private object CloseChatMessagesUtil {
         // notify observers (including myself), if the app is listening
         flow.subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMessages()))
         return selfSignedTxn
-    }
-
-    @Suspendable
-    fun closeCounterParties(flow: FlowLogic<SignedTransaction>, chatId: UniqueIdentifier){
-        val metaInfoStateAndRef = flow.chatVaultService.getMetaInfo(chatId)
-        val metaInfo = metaInfoStateAndRef.state.data
-        metaInfo.receivers.map { flow.initiateFlow(it).send(metaInfo.linearId) }
     }
 }
