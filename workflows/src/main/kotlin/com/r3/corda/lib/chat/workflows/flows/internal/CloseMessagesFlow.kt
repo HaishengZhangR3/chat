@@ -24,12 +24,11 @@ class CloseMessagesFlow(
 
         // get and consume all messages in vault
         val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
-        val metaInfo = metaInfoStateAndRef.state.data
-
         val messagesStateRef = chatVaultService.getChatActiveMessages(chatId)
         requireThat { "There must be message in vault" using (messagesStateRef.isNotEmpty()) }
 
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)
+                .addReferenceState(metaInfoStateAndRef.referenced())
                 .addCommand(CloseMessages(), ourIdentity.owningKey)
         messagesStateRef.forEach { txnBuilder.addInputState(it) }
         txnBuilder.verify(serviceHub)

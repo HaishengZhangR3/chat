@@ -87,4 +87,54 @@ class CreateChatFlowTests {
         Assert.assertTrue(metaPartiesB.subtract(metaPartiesA).isEmpty())
 
     }
+
+    @Test
+    fun `create chat should follow constrains`() {
+
+        val chatFlow = nodeA.startFlow(CreateChatFlow(
+                subject = "subject",
+                content = "content",
+                receivers = listOf(nodeB.info.legalIdentities.single())
+        ))
+        network.runNetwork()
+        chatFlow.getOrThrow()
+
+        val chatMessageA = nodeA.services.vaultService.queryBy(ChatMessage::class.java).states.single()
+        val chatMessageB = nodeB.services.vaultService.queryBy(ChatMessage::class.java).states.single()
+
+        val chatMetaA = nodeA.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single()
+        val chatMetaB = nodeB.services.vaultService.queryBy(ChatMetaInfo::class.java).states.single()
+
+
+        // the following tests are based on "state machine" constrains
+        // chat admin must be the chat initiator
+        Assert.assertTrue(chatMetaA.state.data.admin.equals(nodeA.info.legalIdentities.single()))
+        Assert.assertTrue(chatMetaB.state.data.admin.equals(nodeA.info.legalIdentities.single()))
+
+        // chatId/linearId must not exist
+        // @todo: how to check? we're using UUID auto generated mechanism, so we're sure it'd be unique
+
+        // chatId/linearId in two states must be same
+        Assert.assertTrue(chatMessageA.state.data.chatId == chatMessageB.state.data.chatId)
+        Assert.assertTrue(chatMetaA.state.data.linearId == chatMetaB.state.data.linearId)
+        Assert.assertTrue(chatMessageA.state.data.chatId == chatMetaA.state.data.linearId)
+
+        // sender must be the chat initiator
+        Assert.assertTrue(chatMessageA.state.data.sender == nodeA.info.legalIdentities.single())
+        Assert.assertTrue(chatMessageB.state.data.sender == nodeA.info.legalIdentities.single())
+
+        // participants in ChatMessage only include the party receiving the message
+        Assert.assertTrue(chatMessageA.state.data.participants.single() == nodeA.info.legalIdentities.single())
+        Assert.assertTrue(chatMessageB.state.data.participants.single() == nodeB.info.legalIdentities.single())
+
+        // participants in ChatMetaInfo participants include both admin and receivers
+        val allParticipants = listOf(nodeA.info.legalIdentities.single(), nodeB.info.legalIdentities.single())
+        val metaPartiesA = chatMetaA.state.data.participants
+        val metaPartiesB = chatMetaB.state.data.participants
+        Assert.assertTrue(metaPartiesA.subtract(allParticipants).isEmpty())
+        Assert.assertTrue(metaPartiesB.subtract(allParticipants).isEmpty())
+
+
+    }
+
 }

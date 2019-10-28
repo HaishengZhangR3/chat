@@ -3,6 +3,9 @@ package com.r3.corda.lib.chat.contracts
 import com.r3.corda.lib.chat.contracts.commands.ChatCommand
 import com.r3.corda.lib.chat.contracts.commands.CloseMessages
 import com.r3.corda.lib.chat.contracts.commands.CreateMessage
+import com.r3.corda.lib.chat.contracts.states.ChatID
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
+import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.requireSingleCommand
 import net.corda.core.transactions.LedgerTransaction
@@ -14,17 +17,33 @@ class ChatMessageContract : Contract {
 
         when (command.value) {
             is CreateMessage ->{
-                require(tx.inputStates.isEmpty()) { "There should only be one input chat state." }
-                require(tx.outputStates.size == 1) { "There should only be one output chat state." }
+                require(tx.referenceStates.size == 1) { "There should be a reference input." }
+                require(tx.referenceStates.single() is ChatMetaInfo) { "The reference input should be ChatMetaInfo instance." }
+                require(tx.inputStates.isEmpty()) { "There should be no input." }
+                require(tx.outputStates.size == 1) { "There should only be one output." }
+                require(tx.outputStates.single() is ChatMessage) { "The output should be ChatMessage instance." }
+
+                val chatMeta = tx.referenceStates.single() as ChatMetaInfo
+                val chatMessage = tx.outputStates.single() as ChatMessage
+                require(chatMessage.chatId == chatMeta.linearId) {"chatId/linearId in two states must be same."}
+
                 val requiredSigners = command.signers
-                require(requiredSigners.size == 1) { "There should only be one required signer for a chat: from." }
+                require(requiredSigners.size == 1) { "There should only be one required signer." }
             }
             is CloseMessages -> {
-                require(tx.inputStates.size >= 1) { "There should be more than one input chat state." }
-                require(tx.outputStates.size == 0) { "There should be no output chat state." }
-                val requiredSigners = command.signers
-                require(requiredSigners.size == 1) { "There should be more than one required signer for a chat: from and to list." }
+                require(tx.inputStates.size >= 1) { "There should be more than one input." }
+                require(tx.outputStates.size == 0) { "There should be no output." }
 
+                val chatIds = mutableSetOf<ChatID>()
+                tx.inputStates.forEach {
+                    require(it is ChatMessage) { "The output should be ChatMessage instance." }
+                    it as ChatMessage
+                    chatIds.add(it.chatId)
+                }
+                require(chatIds.size == 1) { "All of the inputs should have same chat ID." }
+
+                val requiredSigners = command.signers
+                require(requiredSigners.size == 1) { "There should be only one required signer." }
             }
             else -> {
                 throw NotSupportedException()
