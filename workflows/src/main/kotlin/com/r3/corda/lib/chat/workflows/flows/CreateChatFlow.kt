@@ -1,11 +1,11 @@
 package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.Create
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.workflows.flows.internal.CreateMessageFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.CreateMetaInfoFlow
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
+import com.r3.corda.lib.chat.workflows.flows.observer.CreateCommand
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -37,6 +37,6 @@ class CreateChatFlowResponder(private val otherSession: FlowSession) : FlowLogic
     @Suspendable
     override fun call() {
         val chatMessage = otherSession.receive<ChatMessage>().unwrap { it }
-        subFlow(ChatNotifyFlow(info = listOf(chatMessage), command = Create()))
+        subFlow(ChatNotifyFlow(info = listOf(chatMessage), command = CreateCommand()))
     }
 }

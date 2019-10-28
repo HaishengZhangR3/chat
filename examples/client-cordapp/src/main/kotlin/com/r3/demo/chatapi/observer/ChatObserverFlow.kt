@@ -1,10 +1,11 @@
 package com.r3.demo.chatapi.observer
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.*
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
-import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
+import com.r3.corda.lib.chat.workflows.flows.observer.*
+import com.r3.demo.chatapi.data.ChatMessageData
 import net.corda.core.contracts.ContractState
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
@@ -32,39 +33,53 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
         File(file).appendText("command: ${command}.\n")
         File(file).appendText("info: ${info}.\n")
 
-        val data = parseData(command = command as ChatCommand, info = info as List<ContractState>)
+        val data = parseData(command = command as NotifyCommand, info = info as List<ContractState>)
         if (data.isNotEmpty()) {
             wsService.wsServer.getNotifyList().map { it.send(data) }
         }
     }
 
-    private fun parseData(command: ChatCommand, info: List<ContractState>): String =
+    private fun parseData(command: NotifyCommand, info: List<ContractState>): String =
             when (command) {
                 // is CreateMeta: don't care, will update customers only after ChatMessage created
-                is CreateMessage        -> {
+                is CreateCommand, is ReplyCommand -> {
                     val message = info.single() as ChatMessage
-                    "New Message: " + chatInfoToString(message)
+                    "New Message: " + chatMessageToString(message)
+//                    chatMessageToString(listOf(command, ChatMessageData.fromState(message)))
                 }
-                is CloseMeta            -> {
+                is CloseCommand -> {
                     val meta = info.single() as ChatMetaInfo
                     "${meta.linearId} is closed by ${meta.admin.name.organisation}"
+//                    chatMetaInfoToString(meta)
                 }
                 // is CloseMessages: don't care, will update customers only after ChatMetaInfo closed
-                is AddReceivers      -> {
+                is AddParticipantsCommand -> {
                     val meta = info.single() as ChatMetaInfo
                     "Added to chat ${meta.linearId}."
+//                    chatMetaInfoToString(meta)
                 }
-                is RemoveReceivers   -> {
+                is RemoveParticipantsCommand -> {
                     val meta = info.single() as ChatMetaInfo
-                    "Removed from chat ${meta.linearId}." }
-
-                else                    -> ""
+                    "Removed from chat ${meta.linearId}."
+//                    chatMetaInfoToString(meta)
+                }
+                else -> ""
             }
 
-    private fun chatInfoToString(message: ChatMessage) =
+    private fun chatMessageToString(message: ChatMessage) =
             """
-                ChatId: ${message.chatId},
-                Sender: ${message.sender.name.organisation},
-                Content: ${message.content}
-            """.trimIndent()
+                    ChatId: ${message.chatId},
+                    Sender: ${message.sender.name.organisation},
+                    Content: ${message.content}
+                """.trimIndent()
+
+    private fun chatMessageToString(info: List<Any>): String {
+        val mapper = jacksonObjectMapper()
+        return mapper.writeValueAsString(info)
+    }
+
+    private fun chatMetaInfoToString(meta: ChatMetaInfo): String {
+        val mapper = jacksonObjectMapper()
+        return mapper.writeValueAsString(meta)
+    }
 }

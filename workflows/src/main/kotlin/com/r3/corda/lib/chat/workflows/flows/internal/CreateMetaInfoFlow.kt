@@ -44,10 +44,6 @@ class CreateMetaInfoFlow(
         val counterPartySession = receivers.map { initiateFlow(it) }
         val collectSignTxn = subFlow(CollectSignaturesFlow(selfSignedTxn, counterPartySession))
         val txn = subFlow(FinalityFlow(collectSignTxn, counterPartySession))
-
-        // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = listOf(chatMetaInfo), command = CreateMeta()))
-
         return txn.coreTransaction.outRefsOfType<ChatMetaInfo>().single()
     }
 }
@@ -59,8 +55,6 @@ class CreateMetaInfoFlowResponder(private val otherSession: FlowSession): FlowLo
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction) {
-                val metaInfo = stx.coreTransaction.outputStates.single() as ChatMetaInfo
-                return subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CreateMeta()))
             }
         }
         val signTxn = subFlow(transactionSigner)

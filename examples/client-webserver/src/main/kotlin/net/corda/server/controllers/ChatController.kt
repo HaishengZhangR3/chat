@@ -1,6 +1,8 @@
 package net.corda.server.controllers
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
+import com.r3.demo.chatapi.data.ChatMessageData
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.server.NodeRPCConnection
 import net.corda.server.service.ChatService
@@ -95,12 +97,17 @@ class ChatController(rpc: NodeRPCConnection) {
     fun getChatParticipants(@PathVariable("id") id: String) =
             ChatService.api(proxy).getChatParticipants(toID(id)).map { it.name.organisation }.toString()
 
-    private fun chatInfoToString(infos: List<ChatMessage>) =
-            infos.map { info ->
-                """
+    private fun chatInfoToString(infos: List<ChatMessage>): String {
+//        val newInfos = infos.map { ChatMessageData.fromState(it) }.toString()
+//        val mapper = jacksonObjectMapper()
+//        return mapper.writeValueAsString(newInfos)
+
+        return infos.map { info ->
+            """
                 ChatId: ${info.chatId},
                 Sender: ${info.sender.name.organisation},
-                Content: ${info.content}. 
+                Content: ${info.content}.
             """.trimIndent()
-            }.toString()
+        }.toString()
+    }
 }

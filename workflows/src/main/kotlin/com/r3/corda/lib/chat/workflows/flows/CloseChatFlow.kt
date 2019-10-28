@@ -1,11 +1,11 @@
 package com.r3.corda.lib.chat.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.Close
 import com.r3.corda.lib.chat.contracts.states.ChatID
 import com.r3.corda.lib.chat.workflows.flows.internal.CloseMessagesFlow
 import com.r3.corda.lib.chat.workflows.flows.internal.CloseMetaInfoFlow
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
+import com.r3.corda.lib.chat.workflows.flows.observer.CloseCommand
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.contracts.requireThat
@@ -35,7 +35,7 @@ class CloseChatFlow(
 
         // close meta
         val txn = subFlow(CloseMetaInfoFlow(chatId))
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = Close()))
+        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseCommand()))
         return txn
     }
 }
@@ -49,7 +49,7 @@ class CloseChatFlowResponder(private val otherSession: FlowSession) : FlowLogic<
         val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
 
         val txn = subFlow(CloseMessagesFlow(chatId))
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = Close()))
+        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseCommand()))
         return txn
 
     }

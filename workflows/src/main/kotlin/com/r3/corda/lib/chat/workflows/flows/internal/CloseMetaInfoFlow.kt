@@ -37,9 +37,6 @@ class CloseMetaInfoFlow(
 
         // notify observers (including myself), if the app is listening
         val txn = subFlow(FinalityFlow(collectSignTxn, counterPartySession))
-
-        // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMeta()))
         return txn
     }
 }
@@ -52,8 +49,6 @@ class CloseMetaInfoFlowResponder(private val otherSession: FlowSession) : FlowLo
         val transactionSigner = object : SignTransactionFlow(otherSession) {
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction) {
-                val metaInfo = serviceHub.loadStates(stx.tx.inputs.toSet()).map { it.state.data }.first() as ChatMetaInfo
-                return subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMeta()))
             }
         }
         val signTxn = subFlow(transactionSigner)

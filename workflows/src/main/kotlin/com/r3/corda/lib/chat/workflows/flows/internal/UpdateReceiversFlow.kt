@@ -1,11 +1,11 @@
 package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.AddParticipants
-import com.r3.corda.lib.chat.contracts.commands.ChatCommand
-import com.r3.corda.lib.chat.contracts.commands.RemoveParticipants
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
+import com.r3.corda.lib.chat.workflows.flows.observer.AddParticipantsCommand
+import com.r3.corda.lib.chat.workflows.flows.observer.NotifyCommand
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
+import com.r3.corda.lib.chat.workflows.flows.observer.RemoveParticipantsCommand
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -36,11 +36,11 @@ class UpdateReceiversFlow(
         val newMetaStateRef = subFlow(CreateMetaInfoFlow(chatId, metaInfo.subject, newReceivers))
 
         // tell all participants to notify
-        newReceivers.map { initiateFlow(it).send(listOf(
+        (metaInfo.receivers + metaInfo.admin + toAdd).map { initiateFlow(it).send(listOf(
                 when {
-                    toAdd.isNotEmpty()      -> AddParticipants()
-                    toRemove.isNotEmpty()   -> RemoveParticipants()
-                    else                    -> AddParticipants()
+                    toAdd.isNotEmpty()      -> AddParticipantsCommand()
+                    toRemove.isNotEmpty()   -> RemoveParticipantsCommand()
+                    else                    -> AddParticipantsCommand()
                 },
                 newMetaStateRef.state.data)) }
 
@@ -53,6 +53,6 @@ class UpdateReceiversFlowResponder(private val otherSession: FlowSession) : Flow
     @Suspendable
     override fun call() {
         val (command, chatMetaInfo ) = otherSession.receive<List<Any>>().unwrap { it }
-        subFlow(ChatNotifyFlow(info = listOf(chatMetaInfo as ChatMetaInfo), command = command as ChatCommand))
+        subFlow(ChatNotifyFlow(info = listOf(chatMetaInfo as ChatMetaInfo), command = command as NotifyCommand))
     }
 }

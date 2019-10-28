@@ -48,9 +48,6 @@ class CreateMessageFlow(
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
 
-        // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = listOf(chatMessage), command = CreateMessage()))
-
         return signedTxn.coreTransaction.outRefsOfType<ChatMessage>().single()
     }
 }
@@ -75,9 +72,6 @@ class CreateMessageFlowResponder(private val otherSession: FlowSession) : FlowLo
 
         val signedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(signedTxn)
-
-        // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = listOf(chatMessage), command = CreateMessage()))
         return signedTxn.coreTransaction.outRefsOfType<ChatMessage>().single()
     }
 }

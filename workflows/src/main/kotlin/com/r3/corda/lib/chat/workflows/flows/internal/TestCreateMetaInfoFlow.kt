@@ -45,8 +45,6 @@ class TestCreateMetaInfoFlow(
         receivers.map { initiateFlow(it) }
                 .map { subFlow(SendTransactionFlow(it, selfSignedTxn)) }
 
-        // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = listOf(chatMetaInfo), command = CreateMeta()))
         return selfSignedTxn.coreTransaction.outRefsOfType<ChatMetaInfo>().single()
     }
 }
@@ -61,7 +59,6 @@ class TestCreateMetaInfoFlowResponder(private val otherSession: FlowSession): Fl
                 checkSufficientSignatures = true,
                 statesToRecord = StatesToRecord.ALL_VISIBLE))
         val metaInfo = txn.coreTransaction.outputStates.single() as ChatMetaInfo
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CreateMeta()))
         return txn
     }
 }

@@ -51,7 +51,6 @@ class TestAddReceiversFlow(
         allReceivers.map { initiateFlow(it) }
                 .map { subFlow(SendTransactionFlow(it, selfSignedTxn)) }
 
-        subFlow(ChatNotifyFlow(info = listOf(newMetaInfo), command = AddReceivers()))
         return selfSignedTxn.coreTransaction.outRefsOfType<ChatMetaInfo>().single()
     }
 }
@@ -65,7 +64,6 @@ class TestAddReceiversFlowResponder(private val otherSession: FlowSession): Flow
                 checkSufficientSignatures = true,
                 statesToRecord = StatesToRecord.ALL_VISIBLE))
         val metaInfo = txn.coreTransaction.outputStates.single() as ChatMetaInfo
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = AddReceivers()))
         return txn
     }
 }

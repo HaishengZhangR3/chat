@@ -38,8 +38,6 @@ class CloseMessagesFlow(
         val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
         serviceHub.recordTransactions(selfSignedTxn)
 
-        // notify observers (including myself), if the app is listening
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMessages()))
         return selfSignedTxn
     }
 }

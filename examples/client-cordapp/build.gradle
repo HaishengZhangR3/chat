@@ -41,6 +41,7 @@ dependencies {
 
     // Kotlin.
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.8'
 
     // Corda integration dependencies.
     cordaCompile("$corda_release_group:corda-core:$corda_release_version") {

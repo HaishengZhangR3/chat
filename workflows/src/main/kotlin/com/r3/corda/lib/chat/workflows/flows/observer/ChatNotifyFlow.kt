@@ -1,7 +1,6 @@
 package com.r3.corda.lib.chat.workflows.flows.observer
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.ChatCommand
 import net.corda.core.contracts.ContractState
 import net.corda.core.flows.*
 
@@ -10,7 +9,7 @@ import net.corda.core.flows.*
 @StartableByRPC
 class ChatNotifyFlow(
         private val info: List<ContractState>,
-        private val command: ChatCommand
+        private val command: NotifyCommand
 ) : FlowLogic<Unit>() {
     @Suspendable
     override fun call(): Unit {
