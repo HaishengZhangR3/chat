@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.AddParticipants
+import com.r3.corda.lib.chat.contracts.commands.AddReceivers
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
@@ -37,7 +37,7 @@ class AddReceiversFlow(
         val newReceivers = metaInfo.receivers + toAdd
         val txn = subFlow(CreateMetaInfoFlow(chatId, metaInfo.subject, newReceivers))
 
-        subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = AddParticipants()))
+        subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = AddReceivers()))
 
         return txn
     }
@@ -51,7 +51,7 @@ class AddReceiversFlowResponder(private val otherSession: FlowSession): FlowLogi
             @Suspendable
             override fun checkTransaction(stx: SignedTransaction) {
                 val metaInfo = stx.coreTransaction.outputStates.single() as ChatMetaInfo
-                return subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = AddParticipants()))
+                return subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = AddReceivers()))
             }
         }
         val signTxn = subFlow(transactionSigner)

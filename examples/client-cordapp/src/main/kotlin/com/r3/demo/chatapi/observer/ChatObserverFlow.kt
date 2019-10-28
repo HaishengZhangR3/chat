@@ -32,8 +32,9 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
         File(file).appendText("command: ${command}.\n")
         File(file).appendText("info: ${info}.\n")
 
-        wsService.wsServer.getNotifyList().map {
-            it.send(parseData(command = command as ChatCommand, info = info as List<ContractState>))
+        val data = parseData(command = command as ChatCommand, info = info as List<ContractState>)
+        if (data.isNotEmpty()) {
+            wsService.wsServer.getNotifyList().map { it.send(data) }
         }
     }
 
@@ -49,11 +50,11 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
                     "${meta.linearId} is closed by ${meta.admin.name.organisation}"
                 }
                 // is CloseMessages: don't care, will update customers only after ChatMetaInfo closed
-                is AddParticipants      -> {
+                is AddReceivers      -> {
                     val meta = info.single() as ChatMetaInfo
                     "Added to chat ${meta.linearId}."
                 }
-                is RemoveParticipants   -> {
+                is RemoveReceivers   -> {
                     val meta = info.single() as ChatMetaInfo
                     "Removed from chat ${meta.linearId}." }
 

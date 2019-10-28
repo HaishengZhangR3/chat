@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.AddParticipants
+import com.r3.corda.lib.chat.contracts.commands.AddReceivers
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
@@ -43,7 +43,7 @@ class TestAddReceiversFlow(
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)
             // @todo: if add this, it'll fail    .addInputState(metaInfoStateAndRef)
                 .addOutputState(newMetaInfo)
-                .addCommand(AddParticipants(), ourIdentity.owningKey)
+                .addCommand(AddReceivers(), ourIdentity.owningKey)
                 .also { it.verify(serviceHub) }
 
         val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
@@ -51,7 +51,7 @@ class TestAddReceiversFlow(
         allReceivers.map { initiateFlow(it) }
                 .map { subFlow(SendTransactionFlow(it, selfSignedTxn)) }
 
-        subFlow(ChatNotifyFlow(info = listOf(newMetaInfo), command = AddParticipants()))
+        subFlow(ChatNotifyFlow(info = listOf(newMetaInfo), command = AddReceivers()))
         return selfSignedTxn.coreTransaction.outRefsOfType<ChatMetaInfo>().single()
     }
 }
@@ -65,7 +65,7 @@ class TestAddReceiversFlowResponder(private val otherSession: FlowSession): Flow
                 checkSufficientSignatures = true,
                 statesToRecord = StatesToRecord.ALL_VISIBLE))
         val metaInfo = txn.coreTransaction.outputStates.single() as ChatMetaInfo
-        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = AddParticipants()))
+        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = AddReceivers()))
         return txn
     }
 }

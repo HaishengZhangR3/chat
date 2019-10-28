@@ -30,14 +30,14 @@ class ChatMetaInfoContract : Contract {
                 require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
             }
-            is AddParticipants -> {
+            is AddReceivers -> {
 //                require(tx.inputStates.size == 1) { "There should be more than one input chat state." }
 //                require(tx.outputStates.size == 1) { "There should be no output chat state." }
                 val requiredSigners = command.signers
                 require(requiredSigners.size >= 1) { "There should be more than one required signer for a chat: from and to list." }
 
             }
-            is RemoveParticipants -> {
+            is RemoveReceivers -> {
                 require(tx.inputStates.size == 1) { "There should be more than one input chat state." }
                 require(tx.outputStates.size == 1) { "There should be no output chat state." }
                 val requiredSigners = command.signers

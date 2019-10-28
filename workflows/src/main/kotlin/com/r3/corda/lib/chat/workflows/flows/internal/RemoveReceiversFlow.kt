@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.RemoveParticipants
+import com.r3.corda.lib.chat.contracts.commands.RemoveReceivers
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
@@ -37,7 +37,7 @@ class RemoveReceiversFlow(
         val newReceivers = metaInfo.receivers - toRemove
         val txn = subFlow(CreateMetaInfoFlow(chatId, metaInfo.subject, newReceivers))
 
-        subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = RemoveParticipants()))
+        subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = RemoveReceivers()))
         return txn
     }
 }
@@ -52,7 +52,7 @@ class RemoveReceiversFlowResponder(private val otherSession: FlowSession): FlowL
                 val metaInfo = stx.coreTransaction.outputStates.single() as ChatMetaInfo
 
                 // notify observers (including myself), if the app is listening
-                subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = RemoveParticipants()))
+                subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = RemoveReceivers()))
             }
         }
         val signTxn = subFlow(transactionSigner)
