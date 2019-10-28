@@ -31,7 +31,7 @@ class ReplyChatFlow(
                 content = content
         ))
 
-        (metaInfo.receivers + metaInfo.admin).map { initiateFlow(it).send(metaInfo) }
+        (metaInfo.receivers + metaInfo.admin).map { initiateFlow(it).send(messageStateRef.state.data) }
         return messageStateRef
     }
 }
