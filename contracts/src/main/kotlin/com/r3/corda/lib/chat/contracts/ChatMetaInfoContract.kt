@@ -9,6 +9,11 @@ import net.corda.core.transactions.LedgerTransaction
 import javax.transaction.NotSupportedException
 
 class ChatMetaInfoContract : Contract {
+    companion object {
+        @JvmStatic
+        val CHAT_METAINFO_CONTRACT_ID = "com.r3.corda.lib.chat.contracts.ChatMetaInfoContract"
+    }
+
     override fun verify(tx: LedgerTransaction) {
         val command = tx.commands.requireSingleCommand(ChatCommand::class.java)
 

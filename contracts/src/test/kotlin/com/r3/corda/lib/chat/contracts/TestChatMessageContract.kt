@@ -1,7 +1,7 @@
 package com.r3.corda.lib.chat.contracts
 
-import com.r3.corda.lib.chat.contracts.commands.CloseMeta
-import com.r3.corda.lib.chat.contracts.commands.CreateMeta
+import com.r3.corda.lib.chat.contracts.commands.CreateMessage
+import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.contracts.states.ChatStatus
 import net.corda.core.contracts.TypeOnlyCommandData
@@ -13,14 +13,14 @@ import java.time.Instant
 import java.util.*
 
 // @todo: add tests for contract and state
-class TestChatMetaInfoContract {
+class TestChatMessageContract {
 
     class DummyCommand : TypeOnlyCommandData()
     private var ledgerServices = MockServices(listOf("com.r3.corda.lib.chat"))
     private val partyA = ledgerServices
 
     @Test
-    fun mustCreateMeta() {
+    fun mustIncludeIssueCommand() {
         val id = UniqueIdentifier.fromString(UUID.randomUUID().toString())
         val meta = ChatMetaInfo(
                 linearId = id,
@@ -31,36 +31,24 @@ class TestChatMetaInfoContract {
                 subject = "subject",
                 status = ChatStatus.ACTIVE
         )
-
-        ledgerServices.ledger {
-            transaction {
-                output(ChatMetaInfoContract.CHAT_METAINFO_CONTRACT_ID, meta)
-                command(listOf(ALICE.publicKey), CreateMeta())
-                this.verifies()
-            }
-        }
-    }
-
-    @Test
-    fun mustCloseMeta() {
-        val id = UniqueIdentifier.fromString(UUID.randomUUID().toString())
-        val meta = ChatMetaInfo(
-                linearId = id,
+        val message = ChatMessage(
+                chatId = id,
+                participants = listOf(ALICE.party),
                 created = Instant.now(),
-                participants = listOf(ALICE.party, BOB.party),
-                admin = ALICE.party,
-                receivers = listOf( BOB.party),
-                subject = "subject",
-                status = ChatStatus.ACTIVE
+                content = "content",
+                sender = ALICE.party
         )
 
+        // @TODO
+        // MockServices only assume the version is 1, while reference is only supported in 4, so fails here
         ledgerServices.ledger {
             transaction {
-                input(ChatMetaInfoContract.CHAT_METAINFO_CONTRACT_ID, meta)
-                command(listOf(ALICE.publicKey), CloseMeta())
+                this.reference(ChatMetaInfoContract.CHAT_METAINFO_CONTRACT_ID, meta)
+                output(ChatMessageContract.CHAT_MESSAGE_CONTRACT_ID, message)
+                command(listOf(ALICE.publicKey), CreateMessage())
+
                 this.verifies()
             }
         }
     }
-
 }

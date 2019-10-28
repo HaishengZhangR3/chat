@@ -12,6 +12,11 @@ import net.corda.core.transactions.LedgerTransaction
 import javax.transaction.NotSupportedException
 
 class ChatMessageContract : Contract {
+    companion object {
+        @JvmStatic
+        val CHAT_MESSAGE_CONTRACT_ID = "com.r3.corda.lib.chat.contracts.ChatMessageContract"
+    }
+
     override fun verify(tx: LedgerTransaction) {
         val command = tx.commands.requireSingleCommand(ChatCommand::class.java)
 
