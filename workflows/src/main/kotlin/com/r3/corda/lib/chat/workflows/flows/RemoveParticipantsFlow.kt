@@ -23,7 +23,10 @@ class RemoveParticipantsFlow(
 ) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
     @Suspendable
     override fun call(): StateAndRef<ChatMetaInfo> {
-        val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
+        val metaInfoStateRef = chatVaultService.getMetaInfoOrNull(chatId)
+        require(metaInfoStateRef != null) { "ChatId must exist." }
+
+        val metaInfo = metaInfoStateRef!!.state.data
         requireThat {
             "Only chat admin can remove participants from chat." using (ourIdentity == metaInfo.admin)
         }

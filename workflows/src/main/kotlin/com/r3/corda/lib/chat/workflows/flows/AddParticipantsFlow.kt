@@ -19,11 +19,13 @@ import net.corda.core.identity.Party
 class AddParticipantsFlow(
         private val chatId: UniqueIdentifier,
         private val toAdd: List<Party>
-
 ) : FlowLogic<StateAndRef<ChatMetaInfo>>() {
     @Suspendable
     override fun call(): StateAndRef<ChatMetaInfo> {
-        val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
+        val metaInfoStateRef = chatVaultService.getMetaInfoOrNull(chatId)
+        require(metaInfoStateRef != null) { "ChatId must exist." }
+
+        val metaInfo = metaInfoStateRef!!.state.data
         requireThat {
             "Only chat admin can add participants to chat." using (ourIdentity == metaInfo.admin)
         }

@@ -20,13 +20,18 @@ class ReplyChatFlow(
 ) : FlowLogic<StateAndRef<ChatMessage>>() {
     @Suspendable
     override fun call(): StateAndRef<ChatMessage> {
-        val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
+        val metaInfoStateRef = chatVaultService.getMetaInfoOrNull(chatId)
+        require(metaInfoStateRef != null) { "ChatId must exist." }
+
+        val metaInfo = metaInfoStateRef!!.state.data
+        require(metaInfo.receivers.contains(ourIdentity)) {"Replier must be in existing participants"}
+
         val messageStateRef = subFlow(CreateMessageFlow(
                 chatId = chatId,
                 content = content
         ))
 
-        (metaInfo.receivers + metaInfo.admin).map { initiateFlow(it).send(messageStateRef.state.data) }
+        (metaInfo.receivers + metaInfo.admin).map { initiateFlow(it).send(metaInfo) }
         return messageStateRef
     }
 }

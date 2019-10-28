@@ -22,7 +22,10 @@ class CloseChatFlow(
 
     @Suspendable
     override fun call(): SignedTransaction {
-        val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
+        val metaInfoStateRef = chatVaultService.getMetaInfoOrNull(chatId)
+        require(metaInfoStateRef != null) { "ChatId must exist." }
+
+        val metaInfo = metaInfoStateRef!!.state.data
         requireThat {
             "Only chat admin can close chat." using (ourIdentity == metaInfo.admin)
         }
