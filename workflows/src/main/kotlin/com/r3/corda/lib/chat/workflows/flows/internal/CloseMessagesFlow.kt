@@ -2,15 +2,16 @@ package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.chat.contracts.commands.CloseMessages
-import com.r3.corda.lib.chat.contracts.states.ChatID
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.contracts.requireThat
-import net.corda.core.flows.*
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.StartableByRPC
+import net.corda.core.flows.StartableByService
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
-import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByService
@@ -19,32 +20,26 @@ class CloseMessagesFlow(
         private val chatId: UniqueIdentifier
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable
-    override fun call(): SignedTransaction = CloseChatMessagesUtil.close(this, chatId)
-}
-
-private object CloseChatMessagesUtil {
-    @Suspendable
-    fun close(flow: FlowLogic<SignedTransaction>, chatId: UniqueIdentifier): SignedTransaction {
+    override fun call(): SignedTransaction  {
 
         // get and consume all messages in vault
-        val metaInfoStateAndRef = flow.chatVaultService.getMetaInfo(chatId)
+        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
         val metaInfo = metaInfoStateAndRef.state.data
 
-        val messagesStateRef = flow.chatVaultService.getChatActiveMessages(chatId)
+        val messagesStateRef = chatVaultService.getChatActiveMessages(chatId)
         requireThat { "There must be message in vault" using (messagesStateRef.isNotEmpty()) }
 
         val txnBuilder = TransactionBuilder(notary = metaInfoStateAndRef.state.notary)
-                .addCommand(CloseMessages(), flow.ourIdentity.owningKey)
-                .addReferenceState(metaInfoStateAndRef.referenced())
+                .addCommand(CloseMessages(), ourIdentity.owningKey)
         messagesStateRef.forEach { txnBuilder.addInputState(it) }
-        txnBuilder.verify(flow.serviceHub)
+        txnBuilder.verify(serviceHub)
 
         // sign it and save it
-        val selfSignedTxn = flow.serviceHub.signInitialTransaction(txnBuilder)
-        flow.serviceHub.recordTransactions(selfSignedTxn)
+        val selfSignedTxn = serviceHub.signInitialTransaction(txnBuilder)
+        serviceHub.recordTransactions(selfSignedTxn)
 
         // notify observers (including myself), if the app is listening
-        flow.subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMessages()))
+        subFlow(ChatNotifyFlow(info = listOf(metaInfo), command = CloseMessages()))
         return selfSignedTxn
     }
 }

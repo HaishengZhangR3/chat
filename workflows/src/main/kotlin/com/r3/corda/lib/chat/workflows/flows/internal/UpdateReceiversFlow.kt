@@ -1,17 +1,17 @@
 package com.r3.corda.lib.chat.workflows.flows.internal
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.chat.contracts.commands.AddReceivers
+import com.r3.corda.lib.chat.contracts.commands.AddParticipants
+import com.r3.corda.lib.chat.contracts.commands.ChatCommand
+import com.r3.corda.lib.chat.contracts.commands.RemoveParticipants
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.observer.ChatNotifyFlow
 import com.r3.corda.lib.chat.workflows.flows.utils.chatVaultService
-import net.corda.core.contracts.Requirements.using
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
-import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.transactions.SignedTransaction
+import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByService
@@ -25,8 +25,7 @@ class UpdateReceiversFlow(
     @Suspendable
     override fun call(): StateAndRef<ChatMetaInfo> {
 
-        val metaInfoStateAndRef = chatVaultService.getMetaInfo(chatId)
-        val metaInfo = metaInfoStateAndRef.state.data
+        val metaInfo = chatVaultService.getMetaInfo(chatId).state.data
 
         // steps:
         // 1. close current ChatMetaInfo, need (all) sign
@@ -34,10 +33,26 @@ class UpdateReceiversFlow(
 
         // 2. create new ChatMetaInfo, with new added but without removed parties, need (all + added - removed) sign
         val newReceivers = metaInfo.receivers + toAdd - toRemove
-        val txn = subFlow(CreateMetaInfoFlow(chatId, metaInfo.subject, newReceivers))
+        val newMetaStateRef = subFlow(CreateMetaInfoFlow(chatId, metaInfo.subject, newReceivers))
 
-        subFlow(ChatNotifyFlow(info = listOf(txn.state.data), command = AddReceivers()))
-        return txn
+        // tell all participants to notify
+        newReceivers.map { initiateFlow(it).send(listOf(
+                when {
+                    toAdd.isNotEmpty()      -> AddParticipants()
+                    toRemove.isNotEmpty()   -> RemoveParticipants()
+                    else                    -> AddParticipants()
+                },
+                newMetaStateRef.state.data)) }
+
+        return newMetaStateRef
     }
 }
 
+@InitiatedBy(UpdateReceiversFlow::class)
+class UpdateReceiversFlowResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
+    @Suspendable
+    override fun call() {
+        val (command, chatMetaInfo ) = otherSession.receive<List<Any>>().unwrap { it }
+        subFlow(ChatNotifyFlow(info = listOf(chatMetaInfo as ChatMetaInfo), command = command as ChatCommand))
+    }
+}
