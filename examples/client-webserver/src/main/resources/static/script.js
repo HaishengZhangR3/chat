@@ -23,7 +23,8 @@ function clearIt() {
 // handle incoming messages
 socket.onmessage = function(event) {
   let incomingMessage = event.data;
-  showMessage(incomingMessage);
+  showPopUp(incomingMessage);
+  // showMessage(incomingMessage);
 };
 
 socket.onclose = event => console.log(`Closed ${event.code}`);
@@ -37,6 +38,20 @@ function showMessage(message) {
   content.append(messageElem);
 }
 
+// show pop up message
+function showPopUp(message) {
+
+  var popupDiv = document.createElement("popup");
+  popupDiv.innerHTML = '<div class="chat-popup new-message">' + message + '</div>';
+
+  var bottomRightElm = document.getElementById("myPopUp");
+  bottomRightElm.appendChild(popupDiv);
+
+  setTimeout(() => {
+    bottomRightElm.removeChild(popupDiv);
+  }, 3000);
+}
+
 // server help function-->
 function post(path, data){
   var xhr = new XMLHttpRequest();
@@ -45,7 +60,7 @@ function post(path, data){
     if (this.readyState === 4) {
       if (this.status == 200) {
       } else {
-        alert('Error occurs: \nstatus code:\n' + this.status);
+        alert('Error occurs in server side: \nstatus code:\n' + this.status);
       }
     }
   });
@@ -73,7 +88,7 @@ function get(path, needParseChatMessage){
           showMessage(this.responseText);
         }
       } else {
-        alert('Error occurs: \nstatus code:\n' + this.status);
+        alert('Error occurs in server side: \nstatus code:\n' + this.status);
       }
     }
   });
