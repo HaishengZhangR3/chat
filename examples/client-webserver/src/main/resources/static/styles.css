@@ -44,3 +44,17 @@ body {font-family: Arial;}
   padding: 2px 2px;
   font-size: 14px;
 }
+
+.header {
+  background: #ffffff;
+}
+
+.sticky {
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+.sticky + .content {
+  padding-top: 102px;
+}

@@ -13,6 +13,7 @@ function showMe() {
     <link rel="stylesheet" href="styles.css">
 </head>
 
+<div class="header" id="myHeader">
 <div class="tab">
   <button class="tablinks" onclick="openTab(event, 'Basic')">Chat</button>
   <button class="tablinks" onclick="openTab(event, 'Update')">Update</button>
@@ -51,5 +52,8 @@ function showMe() {
     <button onclick="getChatParticipants()">one chat participants</button>
   </div>
 </div>
+</div>
 
-<div id="messages"></div>
+<div class="content" id="messages"></div>
+
+<script src="sticky_head.js"></script>
