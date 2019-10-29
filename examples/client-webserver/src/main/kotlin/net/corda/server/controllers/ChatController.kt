@@ -98,16 +98,16 @@ class ChatController(rpc: NodeRPCConnection) {
             ChatService.api(proxy).getChatParticipants(toID(id)).map { it.name.organisation }.toString()
 
     private fun chatInfoToString(infos: List<ChatMessage>): String {
-//        val newInfos = infos.map { ChatMessageData.fromState(it) }.toString()
-//        val mapper = jacksonObjectMapper()
-//        return mapper.writeValueAsString(newInfos)
-
-        return infos.map { info ->
-            """
-                ChatId: ${info.chatId},
-                Sender: ${info.sender.name.organisation},
-                Content: ${info.content}.
-            """.trimIndent()
-        }.toString()
+        val newInfos = infos.map { ChatMessageData.fromState(it) }
+        val mapper = jacksonObjectMapper()
+        return mapper.writeValueAsString(newInfos)
+//
+//        return infos.map { info ->
+//            """
+//                ChatId: ${info.chatId},
+//                Sender: ${info.sender.name.organisation},
+//                Content: ${info.content}.
+//            """.trimIndent()
+//        }.toString()
     }
 }
