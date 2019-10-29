@@ -93,6 +93,14 @@ class ChatApi() {
         return allChatIDsFromVault
     }
 
+    fun getActiveChatIDs(): List<UniqueIdentifier> {
+        log.warn("***** Active chatIDs *****")
+        val allChatIDsFromVault = proxy.startFlow(
+                ::ActiveChatIDs
+        ).returnValue.getOrThrow()
+        return allChatIDsFromVault
+    }
+
     fun getAllChats(): List<StateAndRef<ChatMessage>> {
         log.warn("***** All chats and messages *****")
         val allChatsFromVault = proxy.startFlow(

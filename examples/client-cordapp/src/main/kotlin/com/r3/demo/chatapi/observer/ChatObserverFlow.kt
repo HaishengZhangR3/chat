@@ -6,6 +6,7 @@ import com.r3.corda.lib.chat.contracts.states.ChatMessage
 import com.r3.corda.lib.chat.contracts.states.ChatMetaInfo
 import com.r3.corda.lib.chat.workflows.flows.observer.*
 import com.r3.demo.chatapi.data.ChatMessageData
+import com.r3.demo.chatapi.data.ChatMetaInfoData
 import net.corda.core.contracts.ContractState
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
@@ -44,42 +45,47 @@ class ChatObserverFlow(private val otherSession: FlowSession) : FlowLogic<Unit>(
                 // is CreateMeta: don't care, will update customers only after ChatMessage created
                 is CreateCommand, is ReplyCommand -> {
                     val message = info.single() as ChatMessage
-                    "New Message: " + chatMessageToString(message)
-//                    chatMessageToString(listOf(command, ChatMessageData.fromState(message)))
+                    chatMessageToJson(command, message)
                 }
                 is CloseCommand -> {
                     val meta = info.single() as ChatMetaInfo
-                    "${meta.linearId} is closed by ${meta.admin.name.organisation}"
-//                    chatMetaInfoToString(meta)
+                    chatMetaInfoToJson(command, meta)
                 }
-                // is CloseMessages: don't care, will update customers only after ChatMetaInfo closed
                 is AddParticipantsCommand -> {
                     val meta = info.single() as ChatMetaInfo
-                    "Added to chat ${meta.linearId}."
-//                    chatMetaInfoToString(meta)
+                    chatMetaInfoToJson(command, meta)
                 }
                 is RemoveParticipantsCommand -> {
                     val meta = info.single() as ChatMetaInfo
-                    "Removed from chat ${meta.linearId}."
-//                    chatMetaInfoToString(meta)
+                    chatMetaInfoToJson(command, meta)
                 }
                 else -> ""
             }
+    private fun chatMessageToJson(command: NotifyCommand, message: ChatMessage): String {
+        val mapper = jacksonObjectMapper()
+        return mapper.writeValueAsString(listOf(commandToString(command), ChatMessageData.fromState(message)))
+    }
 
-    private fun chatMessageToString(message: ChatMessage) =
+    private fun chatMetaInfoToJson(command: NotifyCommand, meta: ChatMetaInfo): String {
+        val mapper = jacksonObjectMapper()
+        return mapper.writeValueAsString(listOf(commandToString(command), ChatMetaInfoData.fromState(meta)))
+    }
+
+    private fun commandToString(command: NotifyCommand): String =
+        when (command) {
+            is  CreateCommand              -> "CreateCommand"
+            is  ReplyCommand               -> "ReplyCommand"
+            is  CloseCommand               -> "CloseCommand"
+            is  AddParticipantsCommand     -> "AddParticipantsCommand"
+            is  RemoveParticipantsCommand  -> "RemoveParticipantsCommand"
+            else                           -> ""
+        }
+
+    private fun chatMessageToJson(message: ChatMessage) =
             """
                     ChatId: ${message.chatId},
                     Sender: ${message.sender.name.organisation},
                     Content: ${message.content}
                 """.trimIndent()
 
-    private fun chatMessageToString(info: List<Any>): String {
-        val mapper = jacksonObjectMapper()
-        return mapper.writeValueAsString(info)
-    }
-
-    private fun chatMetaInfoToString(meta: ChatMetaInfo): String {
-        val mapper = jacksonObjectMapper()
-        return mapper.writeValueAsString(meta)
-    }
 }

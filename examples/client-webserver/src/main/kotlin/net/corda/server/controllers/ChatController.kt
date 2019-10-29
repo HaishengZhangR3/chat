@@ -2,6 +2,7 @@ package net.corda.server.controllers
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.r3.corda.lib.chat.contracts.states.ChatMessage
+import com.r3.corda.lib.chat.workflows.flows.service.ChatStatus
 import com.r3.demo.chatapi.data.ChatMessageData
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.server.NodeRPCConnection
@@ -83,11 +84,11 @@ class ChatController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/chats/messages"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getAllChats() =
-            chatInfoToString(ChatService.api(proxy).getAllChats().map { it.state.data })
+            chatInfoParser(ChatService.api(proxy).getAllChats().map { it.state.data })
 
     @GetMapping(value = ["/chat/{id}"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getChatAllMessages(@PathVariable("id") id: String) =
-            chatInfoToString(ChatService.api(proxy).getChatAllMessages(toID(id)).map { it.state.data })
+            chatInfoParser(ChatService.api(proxy).getChatAllMessages(toID(id)).map { it.state.data })
 
     @GetMapping(value = ["/chat/{id}/status"], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun getChatCurrentStatus(@PathVariable("id") id: String) =
@@ -97,8 +98,16 @@ class ChatController(rpc: NodeRPCConnection) {
     fun getChatParticipants(@PathVariable("id") id: String) =
             ChatService.api(proxy).getChatParticipants(toID(id)).map { it.name.organisation }.toString()
 
-    private fun chatInfoToString(infos: List<ChatMessage>): String {
-        val newInfos = infos.map { ChatMessageData.fromState(it) }
+    private fun chatInfoParser(infos: List<ChatMessage>): String {
+        val activeChatIDs = ChatService.api(proxy).getActiveChatIDs()
+        val newInfos = infos.map {
+            if (!activeChatIDs.contains(it.chatId)) {
+                ChatMessageData.fromState(it, ChatStatus.CLOSED)
+            } else {
+                ChatMessageData.fromState(it, ChatStatus.ACTIVE)
+            }
+        }
+
         val mapper = jacksonObjectMapper()
         return mapper.writeValueAsString(newInfos)
 //

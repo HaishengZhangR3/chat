@@ -10,6 +10,7 @@ import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.identity.Party
+import net.corda.core.node.services.Vault.*
 import net.corda.core.serialization.CordaSerializable
 
 // @todo: support page: PageSpecification
@@ -30,7 +31,16 @@ sealed class ChatStatus {
 @StartableByRPC
 class AllChatIDs() : FlowLogic<List<UniqueIdentifier>>() {
     @Suspendable
-    override fun call(): List<UniqueIdentifier> = chatVaultService.getAllChatIDs()
+    override fun call(): List<UniqueIdentifier> = chatVaultService.getAllChatIDs(status = StateStatus.ALL)
+}
+
+// get ID of all active chats
+@InitiatingFlow
+@StartableByService
+@StartableByRPC
+class ActiveChatIDs() : FlowLogic<List<UniqueIdentifier>>() {
+    @Suspendable
+    override fun call(): List<UniqueIdentifier> = chatVaultService.getAllChatIDs(status = StateStatus.UNCONSUMED)
 }
 
 // get all chats (no filter)
@@ -39,7 +49,7 @@ class AllChatIDs() : FlowLogic<List<UniqueIdentifier>>() {
 @StartableByRPC
 class AllChats : FlowLogic<List<StateAndRef<ChatMessage>>>() {
     @Suspendable
-    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getAllMessages()
+    override fun call(): List<StateAndRef<ChatMessage>> = chatVaultService.getAllMessages(status = StateStatus.ALL)
 }
 
 // get all messages for one single chat by ID
@@ -68,7 +78,10 @@ class ChatCurrentStatus(private val chatId: UniqueIdentifier) : FlowLogic<ChatSt
 class ChatParticipants(private val chatId: UniqueIdentifier) : FlowLogic<List<Party>>() {
     @Suspendable
     override fun call(): List<Party> {
-        val headMessage = chatVaultService.getMetaInfo(chatId)
-        return headMessage.state.data.let { it.receivers + it.admin }.distinct()
+        val headMessage = chatVaultService.getMetaInfoOrNull(chatId)
+        when (headMessage) {
+            null -> return emptyList()
+            else -> return headMessage.state.data.let { it.receivers + it.admin }.distinct()
+        }
     }
 }
