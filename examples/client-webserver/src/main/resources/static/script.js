@@ -1,5 +1,11 @@
 
-function openTab(evt, cityName) {
+// ui switch tab control
+function openTab(evt, tabName) {
+  if (document.getElementById(tabName).style.display === 'block') {
+    hideTab(evt);
+    return;
+  }
+
   var i, tabcontent, tablinks;
   tabcontent = document.getElementsByClassName("tabcontent");
   for (i = 0; i < tabcontent.length; i++) {
@@ -9,25 +15,44 @@ function openTab(evt, cityName) {
   for (i = 0; i < tablinks.length; i++) {
     tablinks[i].className = tablinks[i].className.replace(" active", "");
   }
-  document.getElementById(cityName).style.display = "block";
+  document.getElementById(tabName).style.display = "block";
   evt.currentTarget.className += " active";
 }
 
+function hideTab(evt) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+}
+
+// socket for chat notification
 let socket = new WebSocket(wsUrl);
 
-function clearIt() {
-  let content = document.getElementById('messages')
-  content.innerHTML = ''
-}
+// remember the last updated chat ID so that the parser can fix it on top
+var chatLastUpdated = '';
+
+// WebSocket open ready, then refresh page
+socket.onopen = function(event) {
+  refresh();
+};
 
 // handle incoming messages
 socket.onmessage = function(event) {
   let incomingMessage = event.data;
-  showPopUp(incomingMessage);
-  // showMessage(incomingMessage);
+  var popupMsg = parseNotification(incomingMessage)
+  showPopUp(popupMsg);
+  refresh();
 };
 
 socket.onclose = event => console.log(`Closed ${event.code}`);
+
+// clear message in div#messages
+function clearIt() {
+  let content = document.getElementById('messages')
+  content.innerHTML = ''
+}
 
 // show message in div#messages
 function showMessage(message) {
@@ -38,7 +63,38 @@ function showMessage(message) {
   content.append(messageElem);
 }
 
-// show pop up message
+// for notification parser
+function parseNotification(data){
+  var message = JSON.parse(data);
+  switch(message[0]){
+    case "CreateCommand":
+    case "ReplyCommand":
+      var chatMsg = message[1];
+      chatLastUpdated = chatMsg.chatId.id
+      return '<B><font color="' + getColor(chatMsg.sender) + '">[' + chatMsg.sender + ']</font></B> ' + chatMsg.content
+
+    case "CloseCommand":
+      var chatMeta = message[1]
+      chatLastUpdated = chatMeta.linearId.id
+      return chatMeta.linearId + ' is closed.'
+
+    case "AddParticipantsCommand":
+      var chatMeta = message[1]
+      chatLastUpdated = chatMeta.linearId.id
+      return chatMeta.linearId + ' added one participant.'
+
+    case "RemoveParticipantsCommand":
+      var chatMeta = message[1]
+      chatLastUpdated = chatMeta.linearId.id
+      return chatMeta.linearId + ' removed one participant.'
+
+    default:
+      return "";
+      break;
+  }
+}
+
+// show pop up message for notification
 function showPopUp(message) {
 
   var popupDiv = document.createElement("popup");
@@ -98,36 +154,68 @@ function get(path, needParseChatMessage){
   xhr.send(null);
 }
 
+// parser for "get" message from server
 function parseChatMessage(data){
   var messages = JSON.parse(data);
   messages.sort((a, b) => (a.chatId.id > b.chatId.id) ? 1 : (a.chatId.id === b.chatId.id) ? ((a.created.epochSecond > b.created.epochSecond) ? 1 : -1) : -1 );
 
+  // display the last updated chats
+  var msgsLastUpdated = messages.filter(it => it.chatId.id === chatLastUpdated);
+  displayChats(msgsLastUpdated)
+
+  // display other chats
+  var msgsNormal = messages.filter(it => it.chatId.id !== chatLastUpdated);
+  displayChats(msgsNormal)
+}
+
+function displayChats(messages){
   var previousId = '';
-  let content = document.getElementById('messages')
+  let container = document.getElementById('messages')
   var i;
+
   for (i = 0; i < messages.length; i++) {
     var currentId = messages[i].chatId.id;
     if (currentId !== previousId){
       previousId = currentId;
-      let messageElem = document.createElement('div');
-      messageElem.innerHTML = '<p align="center"><B><font color="' + getColor('Title') + '">[' + previousId + ']</font></B></p>';
-      content.append(messageElem);
+      displayChatTitle(container, messages[i]);
     }
-    let messageElem = document.createElement('div');
-    messageElem.innerHTML = '<B><font color="' + getColor(messages[i].sender) + '">[' + messages[i].sender + ']</font></B> ' + messages[i].content;
-    content.append(messageElem);
+    displayChatMessage(container, messages[i]);
   }
 }
 
-function getColor(participant) {
+function displayChatTitle(container, message){
+  var active = (message.status === 'Active');
+  let messageElem = document.createElement('div');
+  var titleColor = getColor('Title')
+  if (!active){
+    titleColor = getColor('Closed')
+  }
+  messageElem.innerHTML = '<p align="center"><B><font color="' + titleColor + '">[' + message.chatId.id + ']</font></B></p>';
+  container.append(messageElem);
+}
+
+function displayChatMessage(container, message){
+  var active = (message.status === 'Active');
+  let messageElem = document.createElement('div');
+  var msgColor = getColor(message.sender)
+  if (!active){
+    msgColor = getColor('Closed')
+  }
+  messageElem.innerHTML = '<B><font color="' + msgColor + '">[' + message.sender + ']</font></B> ' + message.content;
+  container.append(messageElem);
+}
+
+
+function getColor(key) {
   var colors = {
-    'Title':  '#FF0000', // red
+    'Title':  '#0020C2', // Cobalt Blue
     'PartyA': '#7B08DF', // purple
     'PartyB': '#66B35C', // green
     'PartyC': '#0000FF', // blue
-    'PartyD': '#1D1F5F'  // dark blue
+    'PartyD': '#1D1F5F', // dark blue
+    'Closed': '#B6B6B4'  // Gray Cloud
   };
-  return colors[participant];
+  return colors[key];
 }
 
 function getInput(elementId) {
@@ -263,4 +351,8 @@ function getChatParticipants() {
     return
   }
   get("/chat/" + id + "/participants")
+}
+
+function refresh(){
+  getAllChats()
 }
