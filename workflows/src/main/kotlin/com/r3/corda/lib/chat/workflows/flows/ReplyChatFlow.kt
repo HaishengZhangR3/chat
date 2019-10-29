@@ -24,7 +24,7 @@ class ReplyChatFlow(
         require(metaInfoStateRef != null) { "ChatId must exist." }
 
         val metaInfo = metaInfoStateRef!!.state.data
-        require(metaInfo.receivers.contains(ourIdentity)) {"Replier must be in existing participants"}
+        require((metaInfo.receivers + metaInfo.admin).contains(ourIdentity)) {"Replier must be in existing participants"}
 
         val messageStateRef = subFlow(CreateMessageFlow(
                 chatId = chatId,
