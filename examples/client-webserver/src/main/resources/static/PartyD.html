@@ -1,0 +1,55 @@
+<!doctype html>
+<script>
+let wsUrl = 'ws://localhost:20004'
+let serviceUrl = "http://localhost:10058/loc"
+function showMe() {
+  alert(" Name: PartyD\n RPC port: 10016\n websocket port: 20004 \n web service: http://localhost:10058/loc")
+}
+</script>
+<script src="script.js"></script>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<div class="tab">
+  <button class="tablinks" onclick="openTab(event, 'Basic')">Chat</button>
+  <button class="tablinks" onclick="openTab(event, 'Update')">Update</button>
+  <button class="tablinks" onclick="openTab(event, 'Others')">View</button>
+  <button class="tablinks" onclick="clearIt()">Clear</button>
+  <button class="tablinks" onclick="showMe()" style="color:red"><B>PartyD</B></button>
+</div>
+<div id="Basic" class="tabcontent">
+  <div>ID: <input size="50" type="text" id="basicChatId" maxlength="100"/></div>
+  <div>subject: <input size="50" type="text" id="basicSubject" maxlength="100"/></div>
+  <div>content: <input size="50" type="text" id="basicContent" maxlength="100"/></div>
+  <div>participants: <input size="50" type="text" id="basicParticipants" maxlength="100"/></div>
+  <div>
+    <button onclick="createChat()">create</button>
+    <button onclick="replyChat()">reply</button>
+    <button onclick="closeChat()">close</button>
+  </div>
+</div>
+
+<div id="Update" class="tabcontent">
+  <div>ID: <input size="50" type="text" id="updateChatId" maxlength="100"/></div>
+  <div>participants: <input size="50" type="text" id="updateParticipants" maxlength="100"/></div>
+  <div>
+    <button onclick="addParticipants()">add</button>
+    <button onclick="removeParticipants()">remove</button>
+  </div>
+</div>
+
+<div id="Others" class="tabcontent">
+  <div>ID: <input size="50" type="text" id="queryChatId" maxlength="100"/></div>
+  <div>
+    <button onclick="getAllChatIDs()">all ID</button>
+    <button onclick="getAllChats()">all msgs</button>
+    <button onclick="getChatAllMessages()">one chat all msgs</button>
+    <button onclick="getChatCurrentStatus()">one chat status</button>
+    <button onclick="getChatParticipants()">one chat participants</button>
+  </div>
+</div>
+
+<div id="messages"></div>
