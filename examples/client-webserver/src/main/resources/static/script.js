@@ -44,7 +44,9 @@ socket.onmessage = function(event) {
   var popupMsg = parseNotification(incomingMessage)
   showPopUp(popupMsg);
 
-  refresh();
+  setTimeout(function(){
+    refresh();
+  }, 1000);
 };
 
 socket.onclose = event => console.log(`Closed ${event.code}`);
@@ -259,10 +261,10 @@ function createChat() {
 
   post("/chat", data)
 }
-function replyChat() {
+function sendMessage() {
   var content = getInput("basicContent")
   if (!content){
-    alert('Please provide content to reply');
+    alert('Please provide content to send');
     return
   }
 
