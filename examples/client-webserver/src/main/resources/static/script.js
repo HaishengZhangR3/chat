@@ -43,6 +43,7 @@ socket.onmessage = function(event) {
   let incomingMessage = event.data;
   var popupMsg = parseNotification(incomingMessage)
   showPopUp(popupMsg);
+
   refresh();
 };
 
@@ -76,17 +77,17 @@ function parseNotification(data){
     case "CloseCommand":
       var chatMeta = message[1]
       chatLastUpdated = chatMeta.linearId.id
-      return chatMeta.linearId + ' is closed.'
+      return '<B><font color="' + getColor('Title') + '">[' + chatLastUpdated + ']</font></B> ' + ' is closed.'
 
     case "AddParticipantsCommand":
       var chatMeta = message[1]
       chatLastUpdated = chatMeta.linearId.id
-      return chatMeta.linearId + ' added one participant.'
+      return '<B><font color="' + getColor('Title') + '">[' + chatLastUpdated + ']</font></B> ' + ' added one participant.'
 
     case "RemoveParticipantsCommand":
       var chatMeta = message[1]
       chatLastUpdated = chatMeta.linearId.id
-      return chatMeta.linearId + ' removed one participant.'
+      return '<B><font color="' + getColor('Title') + '">[' + chatLastUpdated + ']</font></B> ' + ' removed one participant.'
 
     default:
       return "";
@@ -105,7 +106,7 @@ function showPopUp(message) {
 
   setTimeout(() => {
     bottomRightElm.removeChild(popupDiv);
-  }, 3000);
+  }, 5000);
 }
 
 // server help function-->
